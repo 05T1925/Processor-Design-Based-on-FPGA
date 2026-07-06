@@ -21,11 +21,17 @@
 | `docs/design/项目B_vibecoding开发指南.md` | 已有总体开发指南 |
 | `docs/design/guide_feasibility_review.md` | 本轮可行性检查与目标分级 |
 | `docs/design/project_paths.md` | 仓库目录与文件路径规划 |
-| `docs/design/architecture.md` | 系统总体架构，后续编写 |
-| `docs/design/isa.md` | RV32I 子集与 MAC 指令编码，后续编写 |
-| `docs/design/memory_map.md` | BRAM 与 memory-mapped I/O 地址规划，后续编写 |
-| `docs/design/mac_extension.md` | MAC 指令设计与性能对比方案，后续编写 |
-| `docs/design/performance.md` | CPI、周期、资源、PPA 记录，后续编写 |
+| `docs/design/architecture.md` | 系统总体架构与多周期 FSM 路线 |
+| `docs/design/isa.md` | RV32I 子集与 MAC 指令编码 |
+| `docs/design/memory_map.md` | BRAM 与 memory-mapped I/O 地址规划 |
+| `docs/design/mac_extension.md` | MAC 指令设计与性能对比方案 |
+| `docs/design/performance.md` | CPI、周期、资源、PPA 记录 |
+| `docs/design/interfaces.md` | 模块接口统一约束 |
+| `docs/design/test_plan.md` | 测试程序与仿真计划 |
+| `docs/design/board_demo.md` | 上板演示方案 |
+| `docs/design/development_rules.md` | 小组统一开发规范 |
+| `docs/design/task_board.md` | 任务看板与分工建议 |
+| `docs/design/risk_plan.md` | 风险点与降级方案 |
 
 ## 3. AI 与规划日志路径
 
@@ -33,6 +39,7 @@
 |---|---|
 | `docs/ai_logs/ai_usage_log.md` | AI 使用记录总表，后续持续追加 |
 | `docs/planning/round1_initial_plan.md` | 第一轮初步规划日志 |
+| `docs/planning/round2_mvp_plan.md` | 第二阶段 MVP 规划记录 |
 
 ## 4. RTL 源码路径
 
@@ -58,6 +65,8 @@
 | `tests/branch/` | 分支跳转测试 |
 | `tests/hazard/` | 流水线冒险测试 |
 | `tests/mac/` | MAC 指令与点积测试 |
+| `tests/mmio/` | MMIO 测试 |
+| `tests/perf/` | 性能计数器测试 |
 
 ## 6. 约束、脚本与报告路径
 
