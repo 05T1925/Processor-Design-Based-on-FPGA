@@ -1,6 +1,6 @@
-# 任务看板与分工建议
+# 任务看板与分工
 
-用途：拆分第一版开发任务，定义优先级、负责人建议、完成标准和 Git 提交节点。
+用途：拆分第一版开发任务，定义优先级、负责人、路径、依赖、完成标准和当前状态。
 
 最后更新时间：2026-07-06
 
@@ -10,50 +10,69 @@
 - P1：主线进阶，决定项目亮点。
 - P2：冲刺项，时间允许再做。
 
-## 2. P0 任务表
+状态使用：
 
-| 任务 | 文件/目录 | 负责人建议 | 完成标准 |
-|---|---|---|---|
-| ISA 文档 | `docs/design/isa.md` | 组长/CPU | 指令编码冻结 |
-| Memory map | `docs/design/memory_map.md` | SoC/I/O | 地址冻结 |
-| 架构文档 | `docs/design/architecture.md` | 组长 | 接口清晰 |
-| ALU/regfile | `src/core/` | CPU 数据通路负责人 | 单测通过 |
-| control/imm/branch | `src/core/` | CPU 控制负责人 | basic 仿真通过 |
-| instr/data memory | `src/memory/` | SoC 负责人 | LW/SW 通过 |
-| cpu_top | `src/core/` | 组长 + CPU | basic program 通过 |
+```text
+TODO
+IN_PROGRESS
+BLOCKED
+DONE
+```
 
-## 3. P1 任务表
+测试和性能任务拆分到对应模块负责人：CPU 基础测试归 B，BRAM/MMIO/上板测试归 C，MAC/性能/PPA 初稿归 D，性能复检和报告整合归 A。
 
-| 任务 | 文件/目录 | 负责人建议 | 完成标准 |
-|---|---|---|---|
-| MMIO/LED/seg7 | `src/io/` | 硬件验证负责人 | 上板显示 |
-| soc/minisys top | `src/soc/`, `src/board/` | SoC 负责人 | bitstream 生成 |
-| perf counter | `src/core/` | 性能/报告负责人 | 计数正确 |
-| MAC | `src/core/mac_unit.v` | MAC 负责人 | 点积正确 |
-| 点积测试 | `tests/mac/` | 测试负责人 | 周期可比 |
+## 2. P0 任务
 
-## 4. P2 任务表
+| 优先级 | 任务 | 负责人 | 路径 | 依赖 | 完成标准 | 状态 |
+|---|---|---|---|---|---|---|
+| P0 | ISA 冻结 | A 刘文涛 | `docs/design/isa.md` | 课程要求、CPU 指令范围 | RV32I 子集和 MAC 扩展编码明确 | DONE |
+| P0 | memory map 冻结 | A 刘文涛 + C 胡文龙 | `docs/design/memory_map.md` | SoC/MMIO 需求 | RAM、MMIO、status/result 地址明确 | DONE |
+| P0 | 公共接口规范 | A 刘文涛 | `docs/design/interfaces.md` | ISA、memory map、模块划分 | clk/rst、CPU、memory、I/O、MAC 接口可执行；板级端口待官方 `.xdc` 后核对 | DONE |
+| P0 | ALU | B 张淇 | `src/core/alu.v`, `sim/tb/tb_alu.v` | ISA | 单测通过，基础运算正确 | TODO |
+| P0 | regfile | B 张淇 | `src/core/regfile.v`, `sim/tb/tb_regfile.v` | interfaces、MAC 第三读口需求 | x0 恒为 0，读写和第三读口正确 | TODO |
+| P0 | control/imm/branch | B 张淇 | `src/core/control_unit.v`, `src/core/imm_gen.v`, `src/core/branch_unit.v` | ISA | 基础指令控制信号和分支判断正确 | TODO |
+| P0 | 多周期 `cpu_top` | B 张淇 | `src/core/cpu_top.v`, `sim/tb/tb_cpu_basic.v` | ALU、regfile、control、memory 接口 | basic program 用 xsim 跑到 EBREAK/HALT | TODO |
+| P0 | 基础指令测试 | B 张淇 | `tests/basic/`, `tests/load_store/`, `tests/branch/` | CPU 基础模块 | basic、LW/SW、BEQ/BNE 仿真通过 | TODO |
+| P0 | 指令/数据存储器 | C 胡文龙 | `src/memory/instr_mem.v`, `src/memory/data_mem.v` | memory map、CPU memory 接口 | `$readmemh` 初始化、LW/SW 访问正确 | TODO |
+| P0 | 开发规范和协作流程 | A 刘文涛 | `docs/design/development_rules.md`, `docs/team/` | 成员分工 | 成员能按文档开始协作 | DONE |
 
-| 任务 | 文件/目录 | 负责人建议 | 完成标准 |
-|---|---|---|---|
-| Vivado 数据 | `reports/vivado/` | 报告负责人 | 表格完整 |
-| 流水线冲刺 | `src/core/` | 流水线负责人 | 可选通过 |
-| UART 输出 | `src/io/` | SoC/I/O | 可选展示 |
-| hazard 测试 | `tests/hazard/` | 测试负责人 | 可选通过 |
+## 3. P1 任务
 
-## 5. 成员职责建议
+| 优先级 | 任务 | 负责人 | 路径 | 依赖 | 完成标准 | 状态 |
+|---|---|---|---|---|---|---|
+| P1 | mem_bus 与 MMIO | C 胡文龙 | `src/memory/mem_bus.v`, `src/io/` | memory map、CPU memory 接口 | data memory 与 MMIO 地址译码正确 | TODO |
+| P1 | LED/拨码/数码管 | C 胡文龙 | `src/io/gpio_led.v`, `src/io/gpio_switch.v`, `src/io/seg7_driver.v` | MMIO、board_demo | LED 显示状态，seg7 显示 result/cycle | TODO |
+| P1 | `soc_top` 集成 | C 胡文龙 + A 刘文涛 | `src/soc/soc_top.v` | CPU、memory、MMIO | CPU + memory + I/O 仿真连通 | TODO |
+| P1 | `minisys_top` 和约束 | C 胡文龙 | `src/board/minisys_top.v`, `constraints/minisys.xdc` | 组长安装环境后确认官方 `.xdc` | 端口与官方约束一致，bitstream 可生成 | BLOCKED |
+| P1 | `mac_unit` | D 王博生 | `src/core/mac_unit.v`, `sim/tb/tb_mac.v` | regfile 第三读口 | MAC 单测通过，结果可写回 | TODO |
+| P1 | MAC 控制与写回集成 | D 王博生 + B 张淇 | `src/core/control_unit.v`, `src/core/cpu_top.v` | `mac_unit`、control、regfile | MAC 指令能译码、执行、写回 rd | TODO |
+| P1 | 性能计数器 | D 王博生 | `src/core/csr_perf_counter.v`, `sim/tb/tb_perf_counter.v` | CPU halted/retire/mac pulse | cycle、instret、mac_count 统计正确 | TODO |
+| P1 | 点积对比测试 | D 王博生 | `tests/mac/`, `tests/perf/` | MAC 集成、perf counter | 普通点积与 MAC 点积结果一致，周期可比较 | TODO |
+| P1 | Vivado utilization/timing 导出 | C 胡文龙 | `reports/vivado/` | 可综合工程 | utilization 和 timing summary 有截图或报告 | TODO |
+| P1 | PPA 表格初稿 | D 王博生 | `reports/tables/` | Vivado 数据、性能计数 | 周期、CPI、LUT、FF、BRAM、DSP、timing 字段完整 | TODO |
+| P1 | 性能复检和报告整合 | A 刘文涛 | `reports/`, `docs/ai_logs/ai_usage_log.md` | B/C/D 测试结果 | 数据来源可信，报告口径统一 | TODO |
 
-| 角色 | 职责 |
-|---|---|
-| 组长/架构集成 | 架构、接口冻结、合并、答辩主线 |
-| CPU 负责人 | ALU、regfile、control、imm、branch、cpu_top |
-| SoC/I/O 负责人 | memory、mem_bus、gpio、seg7、minisys_top、xdc |
-| 测试/性能/MAC 负责人 | MAC、testbench、点积程序、PPA、报告图表 |
+## 4. P2 任务
+
+| 优先级 | 任务 | 负责人 | 路径 | 依赖 | 完成标准 | 状态 |
+|---|---|---|---|---|---|---|
+| P2 | 五级流水线冲刺 | D 王博生 | `src/core/`, `docs/design/performance.md` | 多周期 CPU 已稳定 | 有设计说明或可运行原型，不影响主线 | TODO |
+| P2 | forwarding/stall/flush | D 王博生 | `tests/hazard/`, `sim/tb/tb_pipeline_hazard.v` | 流水线原型 | hazard 测试可解释 | TODO |
+| P2 | UART 输出统计 | C 胡文龙 | `src/io/` | SoC 已稳定 | 可选输出性能数据 | TODO |
+| P2 | 更多性能分析图表 | A 刘文涛 + D 王博生 | `reports/tables/` | PPA 数据 | 图表可用于答辩 | TODO |
+
+## 5. 成员职责索引
+
+详细职责、测试拆分、报告分工见：
+
+- `docs/team/member_roles.md`
+- `docs/team/daily_workflow.md`
+- `docs/team/review_checklist.md`
 
 ## 6. Git 提交节点建议
 
 ```text
-docs: define mvp architecture and interfaces
+docs: add team roles and collaboration rules
 docs: define rv32i subset and memory map
 rtl: add alu and regfile
 sim: add alu and regfile tests

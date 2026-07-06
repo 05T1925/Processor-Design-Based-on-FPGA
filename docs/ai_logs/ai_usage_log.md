@@ -7,6 +7,7 @@
 
 - 日期：
 - 成员：
+- 负责模块：
 - 工具：
 - 使用阶段：
 - 涉及文件：
@@ -20,12 +21,22 @@
 - 备注：
 ```
 
+## 记录要求
+
+- 每个成员只记录自己实际使用 AI 的部分。
+- 不能把 AI 日志全部交给组长补。
+- AI 生成或修改代码、文档、测试思路、报告文字，都需要记录。
+- AI 输出必须经过人工审阅。
+- 核心 RTL 和测试内容必须经过 Vivado xsim、Vivado 或人工检查后才能合并。
+- 最终报告附录会引用该日志。
+
 ## 使用记录
 
 ### 记录编号：AI-20260706-01
 
 - 日期：2026-07-06
-- 成员：待填写
+- 成员：刘文涛
+- 负责模块：项目资料整理与协作文档
 - 工具：Codex
 - 使用阶段：项目资料阅读、开发指南可行性检查、仓库目录初始化、第一轮规划日志生成
 - 涉及文件：`docs/design/guide_feasibility_review.md`、`docs/design/project_paths.md`、`docs/planning/round1_initial_plan.md`、`docs/ai_logs/ai_usage_log.md`
@@ -41,7 +52,8 @@
 ### 记录编号：AI-20260706-02
 
 - 日期：2026-07-06
-- 成员：待填写
+- 成员：刘文涛
+- 负责模块：MVP 协作文档与接口规范
 - 工具：Codex
 - 使用阶段：项目规划文档拆分与协作规范生成
 - 涉及文件：`README.md`、`.gitignore`、`docs/design/*.md`、`docs/planning/round2_mvp_plan.md`
@@ -53,3 +65,20 @@
 - 验证结果：文档完整性、一致性、目录、`.gitignore`、临时文件检查通过；待组长最终人工审阅。
 - 是否合并：待提交。
 - 备注：本记录用于报告附页；本轮未生成 RTL/Vivado 工程。
+
+### 记录编号：AI-20260706-03
+
+- 日期：2026-07-06
+- 成员：刘文涛
+- 负责模块：小组分工、任务看板、协作规范、AI 日志
+- 工具：Codex
+- 使用阶段：最终人工确认同步、任务状态调整、提交前检查
+- 涉及文件：`README.md`、`docs/team/member_roles.md`、`docs/team/daily_workflow.md`、`docs/team/review_checklist.md`、`docs/design/task_board.md`、`docs/design/development_rules.md`、`docs/ai_logs/ai_usage_log.md`、`docs/planning/team_division.md`
+- 提示词摘要：根据组长人工确认结果，同步官方 `.xdc` 待确认、姓名学号正确、GitHub 已邀请、贡献度均分、任务看板真实状态，并准备提交推送。
+- AI 输出摘要：更新任务看板状态、成员分工确认信息、贡献度说明和本条 AI 使用日志。
+- 人工审阅内容：组长已确认姓名学号、贡献度比例和 GitHub 邀请状态；官方 `.xdc` 和板级端口待安装环境后确认。
+- 人工修改内容：待提交前最终检查。
+- 验证方式：人工阅读检查，`git status` 检查；本轮不生成 RTL、不运行 Vivado。
+- 验证结果：文档已同步，待 Git 提交和推送。
+- 是否合并：待提交。
+- 备注：本轮只修改 Markdown 文档。
