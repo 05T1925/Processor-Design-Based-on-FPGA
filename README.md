@@ -55,17 +55,21 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 ## 组员进入项目后先读
 
 1. `README.md`
-2. `docs/team/member_roles.md`
-3. `docs/design/task_board.md`
-4. `docs/design/interfaces.md`
-5. `docs/design/isa.md`
-6. `docs/design/memory_map.md`
-7. `docs/design/development_rules.md`
-8. `docs/ai_logs/ai_usage_log.md`
+2. `docs/PROJECT_INDEX.md`（项目文件全貌索引，给 AI agent 快速定位用）
+3. `docs/team/member_roles.md`
+4. `docs/design/task_board.md`
+5. `docs/design/interfaces.md`
+6. `docs/design/isa.md`
+7. `docs/design/memory_map.md`
+8. `docs/design/development_rules.md`
+9. `docs/ai_logs/ai_usage_log.md`
 
 ## 协作入口
 
+- 文件索引：`docs/PROJECT_INDEX.md`（所有文件内容摘要 + AI agent 推荐读取顺序）
 - 成员分工：`docs/team/member_roles.md`
+- B/C/D 开发入口：`docs/team/bcd_onboarding.md`
+- 环境准备：`docs/team/setup_checklist.md`
 - 每日流程：`docs/team/daily_workflow.md`
 - 审查清单：`docs/team/review_checklist.md`
 - 任务看板：`docs/design/task_board.md`
