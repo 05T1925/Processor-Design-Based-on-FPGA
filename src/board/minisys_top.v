@@ -12,18 +12,22 @@ module minisys_top (
     wire rst = ~rst_n;
 
 `ifdef MINISYS_USE_SOC_TOP
-    wire [7:0] soc_led;
+    wire [15:0] led_o;
+    wire [7:0]  seg_data_o;
+    wire [7:0]  seg_sel_o;
 
     soc_top u_soc_top (
         .clk(clk),
         .rst(rst),
-        .sw(sw),
-        .led(soc_led),
-        .seg(seg),
-        .an(an)
+        .sw_i(sw),
+        .led_o(led_o),
+        .seg_data_o(seg_data_o),
+        .seg_sel_o(seg_sel_o)
     );
 
-    assign led = {8'h00, soc_led};
+    assign led = led_o;
+    assign seg = seg_data_o;
+    assign an  = seg_sel_o;
 `else
     reg [23:0] heartbeat_cnt;
 

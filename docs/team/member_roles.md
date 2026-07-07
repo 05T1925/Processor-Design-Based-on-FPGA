@@ -2,7 +2,7 @@
 
 用途：明确四人小组的角色边界、负责路径、测试责任、报告责任、交付标准和协作关系。
 
-最后更新时间：2026-07-06
+最后更新时间：2026-07-07
 
 ## 1. 小组基本信息
 
@@ -176,7 +176,7 @@ RV32I 子集多周期 CPU
 - 实现 LED、拨码开关、七段数码管显示。
 - 实现 `soc_top` 和 `minisys_top`。
 - 维护约束文件。
-- 等官方 `.xdc` 到位后核对板级端口命名。
+- 维护已核对的 `constraints/minisys.xdc`，并保证 `minisys_top` 端口与约束一致。
 - 负责 Vivado 综合、实现、bitstream、上板。
 - 导出 utilization 和 timing 报告。
 
@@ -291,7 +291,7 @@ RV32I 子集多周期 CPU
 | MAC 控制信号 | B + D | A | 译码、执行、写回口径必须一致 |
 | CPU-memory 接口 | B + C | A | 地址、读写使能、数据宽度按 `interfaces.md` |
 | MMIO 显示通路 | C | D/A | result/cycle/mac_count 显示选择需服务演示 |
-| 板级端口和 `.xdc` | C | A | 等官方 `.xdc` 后核对，最终端口名与官方一致 |
+| 板级端口和 `.xdc` | C | A | 以 `constraints/minisys.xdc` 为准，最终端口名与 `minisys_top` 一致 |
 | PPA 数据 | C + D | A | C 导出，D 分析，A 复检 |
 
 ## 9. 每日同步机制

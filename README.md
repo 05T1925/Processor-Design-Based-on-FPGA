@@ -90,6 +90,58 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 - 约束审计见 `docs/design/board_constraints_audit.md` 和 `docs/hardware/minisys_pinout.md`。
 - 当前尚未在 Vivado 2018.3 中综合/实现验证，bitstream 通过后才能把上板任务标为 DONE。
 
+## 当前项目状态
+
+- 文档已冻结：`docs/design/isa.md`、`docs/design/memory_map.md`、`docs/design/interfaces.md`、`docs/design/board_demo.md`。
+- Minisys 主线约束已整理到 `constraints/minisys.xdc`。
+- 板级端口已统一，`minisys_top` 对外端口与 `.xdc` 保持一致。
+- RTL 主体仍在开发中，完整 `cpu_top`、`soc_top`、`mem_bus`、GPIO、seg7、MAC 集成尚未完成。
+- Vivado synthesis、implementation、bitstream 和上板演示尚未最终验证。
+
+## B/C/D 队友快速开始
+
+### B 张淇：CPU 基础路径
+
+先读：
+
+1. `docs/design/isa.md`
+2. `docs/design/interfaces.md`
+3. `docs/design/memory_map.md`
+4. `docs/team/bcd_onboarding.md`
+
+第一轮只做 `src/core/alu.v`、`regfile.v`、`control_unit.v`、`imm_gen.v`、`branch_unit.v`、`cpu_top.v` 和对应 testbench。不要改 `constraints/`、`src/io/`、`src/board/`，不要私自改 MAC 语义或 memory map。
+
+### C 胡文龙：Memory / I/O / 上板路径
+
+先读：
+
+1. `docs/design/board_constraints_audit.md`
+2. `docs/hardware/minisys_pinout.md`
+3. `docs/design/interfaces.md`
+4. `docs/design/board_demo.md`
+5. `docs/team/setup_checklist.md`
+
+第一轮做 `instr_mem`、`data_mem`、`mem_bus`、`gpio_led`、`gpio_switch`、`seg7_driver`、`soc_top`、`minisys_top` 和 Vivado 最小工程验证。不要改 CPU 译码和 MAC 接口。
+
+### D 王博生：MAC / 性能路径
+
+先读：
+
+1. `docs/design/mac_extension.md`
+2. `docs/design/performance.md`
+3. `docs/design/interfaces.md`
+4. `docs/team/bcd_onboarding.md`
+
+第一轮做 `mac_unit`、`csr_perf_counter`、`tests/mac/`、`tests/perf/` 和对应 testbench。流水线、hazard、UART 输出是 P2，不要改成第一版阻塞项。
+
+## 资料与安装口径
+
+- 全员必须安装 Vivado 2018.3、Git 和一个代码编辑器，并能拉取本仓库。
+- 全员必读 `README.md`、`docs/team/member_roles.md`、`docs/design/task_board.md`、`docs/design/interfaces.md`、`docs/design/isa.md`、`docs/design/memory_map.md`、`docs/design/development_rules.md`、`docs/team/daily_workflow.md`。
+- C 重点看 Minisys 硬件手册、Minisys 资源信息、Minisys 基础开发包、Minisys 功能测试资料和 `constraints/minisys.xdc`。
+- B/D 可把 MIPSfpga Fundamentals / Getting Started / SOC 包作为处理器系统思路参考，但不要移植为主线。
+- Nexys4DDR、TEC-PLUS、EGO1、ISE14.7、WiFi、蓝牙、电机、触摸屏资料不用于当前主线。
+
 ## 下一步顺序
 
 1. C 先在 Vivado 2018.3 中建立最小工程，加载 `src/board/minisys_top.v` 与 `constraints/minisys.xdc`。
@@ -108,3 +160,6 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 - 不要没有 testbench 或测试结果就合并核心模块。
 - 不要提交 Vivado 临时文件。
 - 每次 AI 生成或修改代码必须记录到 `docs/ai_logs/ai_usage_log.md`。
+- 不要提交安装包、license、破解文件或 bitstream 临时文件。
+- 不要把 Nexys4DDR、EGO1、TEC-PLUS 等其他板卡约束混入 Minisys 主线。
+- 公共接口变更必须先更新 `docs/design/interfaces.md` 并由 A 确认。

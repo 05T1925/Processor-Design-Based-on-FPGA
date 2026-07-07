@@ -99,3 +99,36 @@
 - 验证结果：主线文档中“等待官方 `.xdc`”状态已清理；约束和顶层端口已统一。
 - 是否合并：待提交。
 - 备注：本轮未修改用户已有的安装包资料目录。
+
+### 记录编号：AI-20260707-02
+
+- 日期：2026-07-07
+- 使用者：A 刘文涛 / Codex
+- 使用环节：
+  - 复核 Minisys 顶层端口与 `constraints/minisys.xdc`
+  - 完善 `README.md`
+  - 新增 B/C/D onboarding 文档
+  - 新增 setup checklist
+  - 同步 daily workflow
+- 输入提示词摘要：
+  - 要求 Codex 根据现有仓库文档，完善端口约束、README、BCD 协作入口和 AI 日志。
+- AI 输出内容摘要：
+  - 更新 README 中项目状态、资料清单、下一步顺序。
+  - 增加 B/C/D 开发边界。
+  - 增加队友下载安装资料清单。
+  - 增加 agent 上下文提示语。
+- 人工审阅点：
+  - 检查是否误改 ISA / memory map / 板级端口。
+  - 检查是否把未完成 RTL 写成已完成。
+  - 检查是否把其他板卡资料混入 Minisys 主线。
+  - 检查是否没有运行 Vivado 却声称 bitstream 通过。
+- 验证状态：
+  - 文档检查：已完成，所有文件已同步，待 A 最终人工确认。
+  - 端口约束复核：`constraints/minisys.xdc` 与 `minisys_top.v` 端口完全一致，无旧端口名残留。
+  - bcd_onboarding.md：已完善，包含 B/C/D 开发边界、完整 agent 提示语、禁止事项、完成标准。
+  - setup_checklist.md：已完善，包含详细资料文件名、必装清单、可选参考和不用于主线的资料。
+  - daily_workflow.md：已复核，互不干扰规则和每日流程完整。
+  - Vivado 综合：未验证。
+  - bitstream：未验证。
+- 是否合并：
+  - 待 A 人工 review 后提交。
