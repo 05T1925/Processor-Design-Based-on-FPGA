@@ -1,6 +1,23 @@
-`timescale 1ns / 1ps
+//==============================================================================
+// minisys_top.v - Minisys Board-Level Top Module
+//
+// Based on: minisys_unified/rtl/top/top_minisys.v
+// Adapted for: Minisys FPGA + EES-329B-V1.1, Xilinx Artix-7 XC7A100T
+//
+// Converts board-level rst_n (active-low) to internal rst (active-high).
+// Selects between:
+//   - UNIFIED_SOC: Full unified SoC with CPU + memory + bus + peripherals
+//   - HEARTBEAT: Simple heartbeat placeholder for testing
+//
+// Pin mapping verified against constraints/minisys.xdc.
+//==============================================================================
 
-module minisys_top (
+`timescale 1ns / 1ps
+`include "../core/public.vh"
+
+module minisys_top #(
+    parameter CPU_MODE = `CPU_MODE_RISCV_MC   // CPU core selection
+) (
     input  wire        clk,
     input  wire        rst_n,
     input  wire [15:0] sw,
@@ -9,25 +26,52 @@ module minisys_top (
     output wire [7:0]  an
 );
 
+    //==========================================================================
+    // Reset conversion: board rst_n (active-low) → internal rst (active-high)
+    //==========================================================================
     wire rst = ~rst_n;
 
+//==========================================================================
+// Unified SoC Mode
+//==========================================================================
 `ifdef MINISYS_USE_SOC_TOP
-    wire [15:0] led_o;
-    wire [7:0]  seg_data_o;
-    wire [7:0]  seg_sel_o;
 
-    soc_top u_soc_top (
-        .clk(clk),
-        .rst(rst),
-        .sw_i(sw),
-        .led_o(led_o),
-        .seg_data_o(seg_data_o),
-        .seg_sel_o(seg_sel_o)
+    // Clock and reset
+    wire sys_clk  = clk;
+    wire sys_rst_n = rst_n;
+
+    // SoC integration
+    wire [15:0] soc_led;
+    wire [15:0] soc_sw;
+    wire [7:0]  soc_seg_an;
+    wire [7:0]  soc_seg_cat;
+    wire [31:0] debug_pc;
+    wire [7:0]  debug_state;
+
+    assign soc_sw = sw;
+
+    soc_top #(
+        .CPU_MODE(CPU_MODE)
+    ) u_soc_top (
+        .clk            (sys_clk),
+        .rst_n          (sys_rst_n),
+        .led            (soc_led),
+        .sw             (soc_sw),
+        .seg_an         (soc_seg_an),
+        .seg_cat        (soc_seg_cat),
+        .uart_rx        (1'b1),
+        .uart_tx        (),
+        .debug_pc       (debug_pc),
+        .debug_state    (debug_state)
     );
 
-    assign led = led_o;
-    assign seg = seg_data_o;
-    assign an  = seg_sel_o;
+    assign led = soc_led;
+    assign seg = soc_seg_cat;
+    assign an  = soc_seg_an;
+
+//==========================================================================
+// Simple Heartbeat Placeholder (testing / board verification)
+//==========================================================================
 `else
     reg [23:0] heartbeat_cnt;
 
@@ -39,9 +83,10 @@ module minisys_top (
         end
     end
 
+    // Show heartbeat on LED[7], display switch state on LED[7:0]
     assign led = {heartbeat_cnt[23], 7'h00, sw[7:0]};
-    assign seg = 8'hff;
-    assign an  = 8'hff;
+    assign seg = 8'hFF;
+    assign an  = 8'hFF;
 `endif
 
 endmodule

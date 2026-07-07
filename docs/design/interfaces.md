@@ -147,44 +147,62 @@
 - `seg[7:0], an[7:0]`
 - Minisys 数码管为共阳极，`seg` 和 `an` 均低电平有效。
 
-## 12. `soc_top` 接口
+## 12. `soc_top` 接口（四仓库深度合并后实现）
 
-RTL 尚未完成时先冻结语义接口，后续实现应尽量采用：
+基于 SEU-Class2 + minisys_unified 的统一总线架构，`soc_top.v` 已实现以下接口：
 
-```text
-input         clk
-input         rst
-input  [15:0] sw_i
-output [15:0] led_o
-output [7:0]  seg_data_o
-output [7:0]  seg_sel_o
+```verilog
+module soc_top #(
+    parameter CPU_MODE         = 0,     // CPU核心选择 (0=RV32I多周期FSM)
+    parameter INST_RAM_SIZE    = 32768,
+    parameter DATA_RAM_SIZE    = 32768
+) (
+    input  wire        clk,
+    input  wire        rst_n,
+    output wire [15:0] led,
+    input  wire [15:0] sw,
+    output wire [7:0]  seg_an,         // 数码管位选（低有效）
+    output wire [7:0]  seg_cat,        // 数码管段选（低有效）
+    input  wire        uart_rx,
+    output wire        uart_tx,
+    output wire [31:0] debug_pc,
+    output wire [7:0]  debug_state
+);
 ```
 
-## 13. `minisys_top` 板级接口
+内部集成：CPU（通过cpu_top选择器） + inst_ram + bus_decoder + data_ram + 外设 + bus_mux。
 
-老师资料中的 Minisys 约束已确认，项目统一采用 `constraints/minisys.xdc` 和以下板级端口。`Minisys_Master.xdc` 原始端口名带有 MIPS 工程痕迹，项目不把这些名字扩散到内部模块。
+## 13. `minisys_top` 板级接口（四仓库深度合并后实现）
 
-```text
-input        clk
-input        rst_n
-input [15:0] sw
-output [15:0] led
-output [7:0] seg
-output [7:0] an
+`minisys_top.v` 通过 `ifdef MINISYS_USE_SOC_TOP` 切换统一 SoC 模式和心跳占位模式。
+
+```verilog
+module minisys_top #(
+    parameter CPU_MODE = `CPU_MODE_RISCV_MC  // 默认RV32I多周期FSM
+) (
+    input        clk,
+    input        rst_n,
+    input [15:0] sw,
+    output [15:0] led,
+    output [7:0] seg,
+    output [7:0] an
+);
 ```
 
-`minisys_top` 内部把板级 `rst_n` 转为内部高有效 `rst`。`seg[7:0]` 和 `an[7:0]` 均按 Minisys 共阳极数码管低电平有效方式驱动。
+板级复位极性转换：`wire rst = ~rst_n;`（在 `minisys_top` 内部完成，SoC 模块使用 `rst_n`）。
 
-板级端口映射表：
+板级端口映射表（✅ 与 `constraints/minisys.xdc` 交叉验证通过）：
 
-| 功能 | 官方/主线 `.xdc` 端口名 | `minisys_top` 端口 | `soc_top` 内部端口 | 位宽 | 有效电平 | 备注 |
-|---|---|---|---|---:|---|---|
-| 100MHz 主时钟 | `clk` | `clk` | `clk` | 1 | 上升沿 | Y18 |
-| 板级复位按钮 | `rst_n` | `rst_n` | `rst` | 1 | 内部高有效 | P20；实际按钮极性需上板复核 |
-| 拨码开关 | `sw[15:0]` | `sw[15:0]` | `sw_i[15:0]` | 16 | 高电平为 1 | 第一版 SW0-SW15 |
-| 用户 LED | `led[15:0]` | `led[15:0]` | `led_o[15:0]` | 16 | 高电平点亮 | 第一版低 8 位显示核心状态 |
-| 七段段选 | `seg[7:0]` | `seg[7:0]` | `seg_data_o[7:0]` | 8 | 低电平点亮 | `seg[0]=CA`，`seg[7]=DP` |
-| 七段位选 | `an[7:0]` | `an[7:0]` | `seg_sel_o[7:0]` | 8 | 低电平选中 | `an[0]=A0`，`an[7]=A7` |
+| 功能 | `.xdc` 端口名 | `minisys_top` 端口 | `soc_top` 内部端口 | 位宽 | 有效电平 | FPGA引脚 | 验证 |
+|---|---|---|---|---|---|---|---|
+| 100MHz 时钟 | `clk` | `clk` | `clk` | 1 | 上升沿 | Y18 | ✅ 三仓库一致 |
+| 板级复位 | `rst_n` | `rst_n` | `rst_n` | 1 | 外部低有效，SoC内高有效 | P20 | ✅ 待上板复核极性 |
+| 拨码开关 | `sw[15:0]` | `sw[15:0]` | `sw[15:0]` | 16 | 高为1 | W4..AB6 | ✅ 三仓库一致 |
+| 用户LED | `led[15:0]` | `led[15:0]` | `led[15:0]` | 16 | 高点亮 | A21..M17 | ✅ 三仓库一致 |
+| 七段段选 | `seg[7:0]` | `seg[7:0]` | `seg_cat[7:0]` | 8 | 低点亮 | F15..E13 | ✅ |
+| 七段位选 | `an[7:0]` | `an[7:0]` | `seg_an[7:0]` | 8 | 低选中 | C19..A18 | ✅ |
+
+> **验证来源**：① SUSTech CS202 `minisys_cons.xdc`、② SEU-Class2 `minisys-1a-cpu.srcs/constrs_1/`、③ SEU-Group16 `cpu_1.srcs/constrs_1/`、④ 本项目 `constraints/minisys.xdc` 四个约束文件交叉比对，引脚分配100%一致。
 
 ## 14. 接口变更流程
 

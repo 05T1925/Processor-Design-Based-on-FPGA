@@ -149,3 +149,90 @@
 - 验证结果：索引覆盖全部 44 个项目文件、8 个源码目录、7 个测试目录；文件摘要与原文一致。
 - 是否合并：待提交。
 - 备注：为 B/C/D 的 AI agent 提供了按角色分组的推荐读取顺序。
+
+### 记录编号：AI-20260708-01
+
+- 日期：2026-07-08
+- 成员：刘文涛
+- 负责模块：六仓库深度分析 + 四仓库深度合并方案设计
+- 工具：Codex
+- 使用阶段：阅读分析 NCUT_MiniSys、SUSTech CS202、SEU-Class2 (z0gSh1u)、SEU-Group16 (Yuqifan1117)、riscv-minisys-cpu、minisys_unified 六个参考仓库，制定合并方案
+- 涉及文件：`docs/planning/four_repo_deep_merge_plan.md`（约400行）、项目已有文档
+- 提示词摘要：要求 Codex 阅读六个开源仓库的全部源码和文档，逐一分析架构特点（ISA/微架构/总线/外设/约束），与我们的项目对比，提取可取之处和不可用之处，制定组件级深度合并方案。
+- AI 输出摘要：
+  - NCUT_MiniSys：5级流水线MIPS，31条指令，推荐借鉴regfile前推和流水线寄存器模板
+  - SUSTech CS202：Minisys单周期MIPS，121/100满分，约束与我们100%一致，推荐借鉴MMIO地址译码模式
+  - SEU-Class2：Minisys 5级流水线MIPS 57条指令+CP0，推荐共享总线+仲裁器+统一外设接口作为架构骨架
+  - SEU-Group16：VHDL+Verilog混合MIPS，BTB分支预测+CP0+ALU六分类，推荐ALU分类方法
+  - riscv-minisys-cpu：北京邮电大学RV32I单周期CPU，31条指令，与我们的ISA完全一致，推荐译码框架
+  - minisys_unified：已整合4种CPU的统一项目，推荐generate块+CPU_MODE参数化设计+统一总线顶层
+  - 生成完整的四仓库深度合并方案，包含架构选型、组件来源决策表、MIPS→RV32I改造路径、统一接口规范、6阶段实施计划
+- 人工审阅点：
+  - 逐仓库验证分析结论是否准确
+  - 确认MIPS→RV32I改造路径的正确性
+  - 确认统一总线架构是否与我们的Minisys板兼容
+  - 决策D-01~D-07是否合理
+- 人工修改内容：
+  - 增加riscv-minisys-cpu和minisys_unified的分析
+  - 确定以minisys_unified为核心模板
+  - 确定RV32I多周期FSM为P0主线（而非单周期或流水线）
+  - 确定总线地址采用统一总线方案（0xFFFF_FCxx）并更新memory_map.md
+- 验证方式：与三个Minisys参考仓库的.xdc约束文件交叉验证引脚一致性
+- 验证结果：Y18=clk, P20=rst_n, LED/SW/SEG引脚在三个仓库之间100%一致
+- 是否合并：合并到 `docs/planning/four_repo_deep_merge_plan.md`
+- 备注：为后续深度合并代码提供了蓝图
+
+### 记录编号：AI-20260708-02
+
+- 日期：2026-07-08
+- 成员：刘文涛
+- 负责模块：代码级深度合并 —— 24个RTL文件生成 + 整合报告 + 文档同步
+- 工具：Codex
+- 使用阶段：在Project-based Curriculum Stage中生成完整统一项目，从minisys_unified提取框架、从riscv-minisys-cpu提取RV32I译码模式、从SEU-Class2提取总线系统、加入MAC和perf_counter独创模块
+- 涉及文件：
+  - 新生成RTL（24个）：`src/core/public.vh`、`alu.v`、`regfile.v`、`control_unit.v`、`imm_gen.v`、`branch_unit.v`、`pc_reg.v`、`mac_unit.v`、`csr_perf_counter.v`、`riscv_mc_cpu.v`、`riscv_mc_wrapper.v`、`cpu_top.v`、`src/bus/bus_decoder.v`、`bus_mux.v`、`src/memory/inst_ram.v`、`data_ram.v`、`src/io/gpio_led.v`、`gpio_switch.v`、`seg7_driver.v`、`src/common/sync.v`、`debounce.v`、`edge_det.v`、`src/soc/soc_top.v`、`src/board/minisys_top.v`
+  - 更新文档（7个）：`README.md`、`docs/design/memory_map.md`、`docs/design/task_board.md`、`docs/team/member_roles.md`、`docs/PROJECT_INDEX.md`、`docs/ai_logs/ai_usage_log.md`、`docs/planning/integration_report.md`
+  - 新增文档（2个）：`docs/planning/four_repo_deep_merge_plan.md`、`docs/planning/integration_report.md`
+  - 测试文件（2个）：`tests/basic/basic_test.S`、`sim/programs/basic_test.hex`
+- 提示词摘要：要求 Codex 基于分析结论和合并方案，从 minisys_unified 提取统一总线框架，从 riscv-minisys-cpu 提取 RV32I 译码模式，从 SEU-Class2 提取总线仲裁器，适配到 Project-based Curriculum Stage 中，生成完整的统一项目。验证一致性（约束/ISA/接口/内存映射），撰写整合报告，同步所有markdown文档，重新规划ABCD分工。
+- AI 输出摘要：
+  - `public.vh`（280行）：全局宏定义，覆盖RV32I+MIPS双ISA编码+总线宽度+内存映射+外设地址+ALU六分类+CPU_MODE
+  - 总线系统：ibus+dbus共享总线，14选1仲裁器，addr[9:4]二级地址译码
+  - RV32I多周期FSM CPU（280行）：6状态（FETCH/DECODE/EXECUTE/MEMORY/WRITEBACK/HALT），31条RV32I指令+MAC
+  - 外设统一6端口bus slave接口（LED/Switch/SEG7）
+  - MAC乘加单元（组合逻辑，DSP推断）+ 性能计数器（3×32bit）
+  - CPU_MODE参数化多核切换（generate块）
+  - 整合报告（约500行）：选型分析、设计决策、一致性验证（板级约束/ISA编码/接口/内存映射）
+  - 文档更新：memory_map更新为统一总线地址、member_roles重新分工、task_board状态更新
+- 人工审阅点：
+  - 逐模块检查MIPS→RV32I改造是否正确（opcode位置、寄存器字段、立即数格式）
+  - 验证memory_map.md新地址与bus_decoder.v一致性
+  - 验证minisys_top.v端口与constraints/minisys.xdc一致性（Y18/P20/sw/led/seg/an）
+  - 检查regfile.v的MAC第三读口（rd_old）是否正确实现
+  - 检查control_unit.v的EBREAK=0x00100073处理
+  - 检查MAC指令编码（opcode=0001011, funct7=0000001）
+  - 确认统一总线地址（0xFFFF_FCxx）与SEU参考设计兼容且不与Data Memory冲突
+- 人工修改内容：
+  - 修正memory_map.md地址映射与bus_decoder.v的差异
+  - 协调ALU六分类（SEU-Group16）与RV32I操作码的映射
+  - 确保control_unit.v覆盖所有31条RV32I指令和MAC
+  - 确保soc_top.v端口与minisys_top.v能正确对接
+  - 重新规划ABCD分工（A承担代码整合工作，B/C/D任务前移）
+- 验证方式：
+  - 交叉验证三个Minisys参考仓库的.xdc约束（Y18=clk, P20=rst, LED/SW/SEG引脚100%一致）
+  - 逐指令验证public.vh和control_unit.v的编码与isa.md一致
+  - 逐模块验证RTL端口与interfaces.md定义匹配
+  - 地址空间验证：bus_decoder.v译码范围与memory_map.md完全一致
+- 验证结果：
+  - 板级约束：✅ 三个参考仓库与本项目minisys.xdc引脚100%一致
+  - ISA编码：✅ public.vh、control_unit.v与isa.md完全一致
+  - 接口规范：✅ 所有RTL模块满足interfaces.md定义
+  - 内存映射：✅ bus_decoder.v与新版memory_map.md完全一致
+  - 数码管极性：✅ 共阳极低有效，seg7_driver.v已正确处理
+- 是否合并：待提交（24个新RTL文件 + 9个文档更新 + 2个测试文件）
+- 备注：
+  - 本次合并是项目从"只有文档"到"有完整RTL代码库"的关键转折点
+  - 组长A完成了原本需要B/C/D三人分别完成的部分代码工作（CPU模块/总线/外设/SoC集成）
+  - 后续B/C/D的职责从"从零开发"变为"验证+调试+扩展"，降低了技术门槛
+  - 独创模块（mac_unit.v、csr_perf_counter.v）在参考仓库中没有直接对应，具有创新性
+  - CPU_MODE参数化设计为后续PPA对比和答辩提供了灵活的实验平台

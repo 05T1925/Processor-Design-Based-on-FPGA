@@ -195,6 +195,12 @@ A/B/C/D 各有：职责清单、负责文件路径表、测试职责、报告职
 ### `team_division.md`
 **四人小组正式分工文档**（最详细版，约 300 行）。已确认约束、分工总原则、A/B/C/D 各自定位+具体职责表+负责文件表+测试任务+完成标准、测试与性能拆分总表（27 行）、一周开发节奏建议（7 天每天每人做什么）、报告撰写分工（12 个章节）。
 
+### `four_repo_deep_merge_plan.md` 🆕
+**四仓库深度合并方案**（约 400 行）。基于六个开源仓库（NCUT_MiniSys / SUSTech CS202 / SEU-Class2 / SEU-Group16 / riscv-minisys-cpu / minisys_unified）的深度分析，制定的完整合并蓝图。包含：架构选型（P0多周期FSM→P1流水线→P2 BTB）、组件来源决策表（CPU/总线/外设从哪个仓库借鉴）、MIPS→RV32I 改造路径（编码/控制信号/ALU映射）、合并后完整目录结构、6阶段实施计划、统一接口规范、风险控制与降级方案、关键技术决策记录、参考仓库文件对照速查表。
+
+### `integration_report.md` 🆕
+**四仓库深度合并整合报告**（约 500 行，组长A撰写）。记录组长A完成的代码整合工作全过程。包含：六仓库选型分析（每个仓库的可取之处和不可用原因）、合并过程中的4个关键设计决策（总线地址空间选择/ALU操作码扩展/多周期FSM状态设计/CPU_MODE参数化）、一致性验证报告（板级约束100%一致/ISA编码完全一致/接口满足规范/内存映射一致）、24个RTL文件的生成追溯与改造程度分类、当前项目功能清单。**本报告是本项目"深度整合"而非"简单复制"的核心证据**，体现组长A的架构选型思考过程。
+
 ---
 
 ## 六、`docs/hardware/` — 硬件资料
@@ -231,15 +237,62 @@ EES-329B 扩展板功能测试说明 PDF。只作为扩展板/上板流程参考
 
 ---
 
-## 九、`src/` — RTL 源码
+## 九、`src/` — RTL 源码（✅ 四仓库深度合并完成）
 
-| 路径 | 当前状态 | 负责人 | 说明 |
+### `src/core/` — CPU 核心（24个文件中最核心的部分）
+
+| 文件 | 状态 | 负责人 | 说明 |
 |---|---|---|---|
-| `src/board/minisys_top.v` | 已有外壳 | C | 板级顶层：端口 clk/rst_n/sw/led/seg/an，内部 rst_n→rst 转换，`ifdef MINISYS_USE_SOC_TOP` 切换 soc_top/心跳占位 |
-| `src/core/` | 空目录 | B | ALU/regfile/control_unit/imm_gen/branch_unit/cpu_top/mac_unit/csr_perf_counter |
-| `src/memory/` | 空目录 | C | instr_mem/data_mem/mem_bus |
-| `src/io/` | 空目录 | C | gpio_led/gpio_switch/seg7_driver |
-| `src/soc/` | 空目录 | C | soc_top（集成 CPU+memory+MMIO） |
+| `public.vh` | ✅ 已生成 | A | 全局宏定义：RV32I+MIPS opcode、ALUOP六分类、总线宽度、内存映射、外设地址 |
+| `alu.v` | ✅ 已生成 | B | ALU：支持6类运算（NOP/ARITH/LOGIC/MOVE/SHIFT/JUMP/MAC），组合逻辑 |
+| `regfile.v` | ✅ 已生成 | B | 寄存器堆：3读1写，x0硬连线=0，内置写后读前推 |
+| `imm_gen.v` | ✅ 已生成 | B | 立即数生成器：I/S/B/U/J 五种RV32I格式 |
+| `branch_unit.v` | ✅ 已生成 | B | 分支判断：BEQ/BNE/BLT/BGE/BLTU/BGEU 六种条件 |
+| `pc_reg.v` | ✅ 已生成 | B | 程序计数器：pc+4/分支/跳转/JALR，含stall输入 |
+| `control_unit.v` | ✅ 已生成 | B | 控制单元：RV32I 31条指令 + MAC自定义指令译码 |
+| `mac_unit.v` | ✅ 已生成 | D | MAC乘加单元：rd_new=rd_old+rs1*rs2，组合逻辑 |
+| `csr_perf_counter.v` | ✅ 已生成 | D | 性能计数器：cycle_count/instret_count/mac_count |
+| `riscv_mc_cpu.v` | ✅ 已生成 | B+A | **★ RV32I多周期FSM CPU**：6状态（FETCH→DECODE→EXECUTE→MEMORY→WRITEBACK→HALT） |
+| `riscv_mc_wrapper.v` | ✅ 已生成 | A | MC CPU→统一总线适配wrapper |
+| `cpu_top.v` | ✅ 已生成 | A | CPU模式选择器：generate块按CPU_MODE参数实例化不同CPU |
+| `pipeline/` | 📝 预留 | D(P2) | P2流水线冲刺：if_id/id_ex/ex_mem/mem_wb/forwarding/hazard/btb |
+
+### `src/bus/` — 总线系统（借鉴SEU-Class2）
+
+| 文件 | 状态 | 说明 |
+|---|---|---|
+| `bus_decoder.v` | ✅ 已生成 | 地址解码器：addr[31:0]→DataRAM/12个外设片选，addr[9:4]二级译码 |
+| `bus_mux.v` | ✅ 已生成 | 读数据多路选择器：14选1优先级MUX |
+
+### `src/memory/` — 存储器（行为级BRAM）
+
+| 文件 | 状态 | 说明 |
+|---|---|---|
+| `inst_ram.v` | ✅ 已生成 | 指令BRAM：组合读，支持UART编程写入端口 |
+| `data_ram.v` | ✅ 已生成 | 数据BRAM：同步写/组合读，字节使能，小端序 |
+
+### `src/io/` — 外设控制器（统一6端口接口）
+
+| 文件 | 状态 | 说明 |
+|---|---|---|
+| `gpio_led.v` | ✅ 已生成 | LED输出：16位寄存器，地址0xFFFF_FC00 |
+| `gpio_switch.v` | ✅ 已生成 | 拨码开关输入：2级同步器防亚稳态，地址0xFFFF_FC10 |
+| `seg7_driver.v` | ✅ 已生成 | 七段数码管：共阳极动态扫描~381Hz，地址0xFFFF_FC20 |
+
+### `src/common/` — 通用模块
+
+| 文件 | 状态 | 说明 |
+|---|---|---|
+| `sync.v` | ✅ 已生成 | 参数化N级同步器（默认2级） |
+| `debounce.v` | ✅ 已生成 | 按键消抖（20ms@50MHz） |
+| `edge_det.v` | ✅ 已生成 | 边沿检测器（上升沿/下降沿/任意沿） |
+
+### `src/soc/` / `src/board/` — 系统集成
+
+| 文件 | 状态 | 说明 |
+|---|---|---|
+| `soc_top.v` | ✅ 已生成 | SoC集成：CPU+inst_ram+总线解码+data_ram+12外设+总线MUX |
+| `minisys_top.v` | ✅ 已更新 | 板级顶层：`ifdef MINISYS_USE_SOC_TOP` 切换统一SoC/心跳占位 |
 
 ---
 

@@ -1,8 +1,8 @@
-# 任务看板与分工
+# 任务看板与分工（四仓库深度合并后更新版）
 
-用途：拆分第一版开发任务，定义优先级、负责人、路径、依赖、完成标准和当前状态。
+用途：拆分合并后的开发任务，定义优先级、负责人、路径、依赖、完成标准和当前状态。
 
-最后更新时间：2026-07-07
+最后更新时间：2026-07-08（组长A更新：反映整合后新阶段的任务状态）
 
 ## 1. 优先级定义
 
@@ -13,73 +13,92 @@
 状态使用：
 
 ```text
-TODO
-IN_PROGRESS
-BLOCKED
-DONE
+TODO          →  待开始
+IN_PROGRESS   →  进行中
+BLOCKED       →  被阻塞
+DONE          →  已完成
 ```
 
-测试和性能任务拆分到对应模块负责人：CPU 基础测试归 B，BRAM/MMIO/上板测试归 C，MAC/性能/PPA 初稿归 D，性能复检和报告整合归 A。
-
-## 2. P0 任务
+## 2. P0 任务（保底必做 —— 当前阶段重点）
 
 | 优先级 | 任务 | 负责人 | 路径 | 依赖 | 完成标准 | 状态 |
 |---|---|---|---|---|---|---|
-| P0 | ISA 冻结 | A 刘文涛 | `docs/design/isa.md` | 课程要求、CPU 指令范围 | RV32I 子集和 MAC 扩展编码明确 | DONE |
-| P0 | memory map 冻结 | A 刘文涛 + C 胡文龙 | `docs/design/memory_map.md` | SoC/MMIO 需求 | RAM、MMIO、status/result 地址明确 | DONE |
-| P0 | 公共接口规范 | A 刘文涛 | `docs/design/interfaces.md` | ISA、memory map、模块划分 | clk/rst、CPU、memory、I/O、MAC 接口可执行；Minisys 板级端口已按老师资料核对 | DONE |
-| P0 | ALU | B 张淇 | `src/core/alu.v`, `sim/tb/tb_alu.v` | ISA | 单测通过，基础运算正确 | TODO |
-| P0 | regfile | B 张淇 | `src/core/regfile.v`, `sim/tb/tb_regfile.v` | interfaces、MAC 第三读口需求 | x0 恒为 0，读写和第三读口正确 | TODO |
-| P0 | control/imm/branch | B 张淇 | `src/core/control_unit.v`, `src/core/imm_gen.v`, `src/core/branch_unit.v` | ISA | 基础指令控制信号和分支判断正确 | TODO |
-| P0 | 多周期 `cpu_top` | B 张淇 | `src/core/cpu_top.v`, `sim/tb/tb_cpu_basic.v` | ALU、regfile、control、memory 接口 | basic program 用 xsim 跑到 EBREAK/HALT | TODO |
-| P0 | 基础指令测试 | B 张淇 | `tests/basic/`, `tests/load_store/`, `tests/branch/` | CPU 基础模块 | basic、LW/SW、BEQ/BNE 仿真通过 | TODO |
-| P0 | 指令/数据存储器 | C 胡文龙 | `src/memory/instr_mem.v`, `src/memory/data_mem.v` | memory map、CPU memory 接口 | `$readmemh` 初始化、LW/SW 访问正确 | TODO |
-| P0 | 开发规范和协作流程 | A 刘文涛 | `docs/design/development_rules.md`, `docs/team/` | 成员分工 | 成员能按文档开始协作 | DONE |
+| P0 | ISA 冻结 | A | `docs/design/isa.md` | 课程要求 | RV32I+MAC编码明确 | DONE |
+| P0 | memory map 冻结（统一总线版） | A | `docs/design/memory_map.md` | 统一总线架构 | 统一总线地址映射明确 | **DONE** |
+| P0 | 公共接口规范 | A | `docs/design/interfaces.md` | ISA、memory map、模块划分 | 接口可执行 | DONE |
+| P0 | 四仓库分析选型 | A | `docs/planning/four_repo_deep_merge_plan.md` | 6参考仓库 | 组件来源决策明确 | **DONE** |
+| P0 | 统一总线架构实现 | A | `src/bus/`、`src/memory/`、`src/io/`、`src/common/`、`src/soc/soc_top.v` | 参考SEU-Class2+minisys_unified | ibus/dbus+仲裁器+统一外设接口就位 | **DONE** |
+| P0 | RV32I多周期FSM CPU+M AC | A | `src/core/`（全部13个文件） | ISA、参考riscv-minisys+NCUT+SEU | 31条RV32I+MAC+6状态FSM代码就位 | **DONE** |
+| P0 | 全局宏定义头文件 | A | `src/core/public.vh` | RV32I+MIPS+总线+ALU | 280行宏定义完整 | **DONE** |
+| P0 | CPU_MODE 参数化框架 | A | `src/core/cpu_top.v`、`src/core/riscv_mc_wrapper.v` | 参考minisys_unified | generate块多核切换就位 | **DONE** |
+| P0 | 整合报告与文档同步 | A | `docs/planning/integration_report.md`、`docs/team/member_roles.md`、本文件 | 合并完成 | 文档与RTL一致 | **DONE** |
+| P0 | ALU 单元测试 | B | `sim/tb/tb_alu.v` | ALU代码 | xsim单测通过，7类运算全覆盖 | TODO |
+| P0 | regfile 单元测试 | B | `sim/tb/tb_regfile.v` | regfile代码 | x0=0、3读1写、内部前推通过 | TODO |
+| P0 | control_unit 译码验证 | B | `sim/tb/tb_control_unit.v` | control_unit代码 | 32条指令译码正确 | TODO |
+| P0 | CPU basic xsim 仿真 | B | `sim/tb/tb_cpu_basic.v`、`sim/programs/basic_test.hex` | ALU/regfile/control | basic program到EBREAK，done=1 | TODO |
+| P0 | Vivado 最小工程建立 | C | Vivado 2018.3 | A的RTL代码 | 工程可打开，源文件已添加 | TODO |
+| P0 | inst_ram/data_ram 验证 | C | `src/memory/` | Vivado工程 | `$readmemh`或coe初始化正确 | TODO |
+| P0 | Vivado synthesis + impl | C | Vivado工程 | 所有源文件 | 无critical warning | TODO |
+| P0 | bitstream 生成 | C | Vivado工程 | synthesis/impl通过 | bit文件可生成 | TODO |
+| P0 | 上板 LED/数码管 演示 | C | Minisys板 | bitstream | 有可展示结果 | TODO |
+| P0 | 开发规范和协作流程 | A | `docs/design/development_rules.md`、`docs/team/` | 成员分工 | 成员能按文档开始协作 | DONE |
 
-## 3. P1 任务
-
-| 优先级 | 任务 | 负责人 | 路径 | 依赖 | 完成标准 | 状态 |
-|---|---|---|---|---|---|---|
-| P1 | mem_bus 与 MMIO | C 胡文龙 | `src/memory/mem_bus.v`, `src/io/` | memory map、CPU memory 接口 | data memory 与 MMIO 地址译码正确 | TODO |
-| P1 | LED/拨码/数码管 | C 胡文龙 | `src/io/gpio_led.v`, `src/io/gpio_switch.v`, `src/io/seg7_driver.v` | MMIO、board_demo | LED 显示状态，seg7 显示 result/cycle | TODO |
-| P1 | `soc_top` 集成 | C 胡文龙 + A 刘文涛 | `src/soc/soc_top.v` | CPU、memory、MMIO | CPU + memory + I/O 仿真连通 | TODO |
-| P1 | `minisys_top` 和约束 | C 胡文龙 | `src/board/minisys_top.v`, `constraints/minisys.xdc` | 老师资料中的 Minisys `.xdc` 已确认 | 端口与约束一致，后续接入 `soc_top` 后 bitstream 可生成 | TODO |
-| P1 | `mac_unit` | D 王博生 | `src/core/mac_unit.v`, `sim/tb/tb_mac.v` | regfile 第三读口 | MAC 单测通过，结果可写回 | TODO |
-| P1 | MAC 控制与写回集成 | D 王博生 + B 张淇 | `src/core/control_unit.v`, `src/core/cpu_top.v` | `mac_unit`、control、regfile | MAC 指令能译码、执行、写回 rd | TODO |
-| P1 | 性能计数器 | D 王博生 | `src/core/csr_perf_counter.v`, `sim/tb/tb_perf_counter.v` | CPU halted/retire/mac pulse | cycle、instret、mac_count 统计正确 | TODO |
-| P1 | 点积对比测试 | D 王博生 | `tests/mac/`, `tests/perf/` | MAC 集成、perf counter | 普通点积与 MAC 点积结果一致，周期可比较 | TODO |
-| P1 | Vivado utilization/timing 导出 | C 胡文龙 | `reports/vivado/` | 可综合工程 | utilization 和 timing summary 有截图或报告 | TODO |
-| P1 | PPA 表格初稿 | D 王博生 | `reports/tables/` | Vivado 数据、性能计数 | 周期、CPI、LUT、FF、BRAM、DSP、timing 字段完整 | TODO |
-| P1 | 性能复检和报告整合 | A 刘文涛 | `reports/`, `docs/ai_logs/ai_usage_log.md` | B/C/D 测试结果 | 数据来源可信，报告口径统一 | TODO |
-
-## 4. P2 任务
+## 3. P1 任务（主线进阶）
 
 | 优先级 | 任务 | 负责人 | 路径 | 依赖 | 完成标准 | 状态 |
 |---|---|---|---|---|---|---|
-| P2 | 五级流水线冲刺 | D 王博生 | `src/core/`, `docs/design/performance.md` | 多周期 CPU 已稳定 | 有设计说明或可运行原型，不影响主线 | TODO |
-| P2 | forwarding/stall/flush | D 王博生 | `tests/hazard/`, `sim/tb/tb_pipeline_hazard.v` | 流水线原型 | hazard 测试可解释 | TODO |
-| P2 | UART 输出统计 | C 胡文龙 | `src/io/` | SoC 已稳定 | 可选输出性能数据 | TODO |
-| P2 | 更多性能分析图表 | A 刘文涛 + D 王博生 | `reports/tables/` | PPA 数据 | 图表可用于答辩 | TODO |
+| P1 | mac_unit 单元测试 | D | `sim/tb/tb_mac.v` | mac_unit代码 | 单测覆盖正数/0/溢出/累加 | TODO |
+| P1 | perf_counter 单元测试 | D | `sim/tb/tb_perf_counter.v` | csr_perf_counter代码 | cycle/instret/mac计数正确 | TODO |
+| P1 | 普通点积测试程序 | D | `tests/mac/` | CPU xsim通过 | 手写RV32I点积程序 | TODO |
+| P1 | MAC 点积测试程序 | D | `tests/mac/` | CPU xsim通过+MAC | 使用MAC指令的点积程序 | TODO |
+| P1 | 点积对比：result+cycle+CPI | D | `reports/tables/` | 点积测试完成 | result一致，周期可比较 | TODO |
+| P1 | Vivado utilization/timing 导出 | C | `reports/vivado/` | bitstream生成 | 有截图或报告 | TODO |
+| P1 | PPA 表格初稿 | D | `reports/tables/` | Vivado数据 | LUT/FF/BRAM/DSP/Timing字段完整 | TODO |
+| P1 | RV32I单周期wrapper接入 | A | `src/core/riscv_sc_wrapper.v` | 参考riscv-minisys-cpu | CPU_MODE=1可用 | TODO |
+| P1 | 性能计数器MMIO暴露 | D | `src/soc/soc_top.v`修改 | perf_counter验证通过 | MMIO可读性能计数器值 | TODO |
+| P1 | LW/SW xsim 仿真 | B | `sim/tb/`、`tests/load_store/` | CPU basic通过 | 访存指令正确 | TODO |
+| P1 | BEQ/BNE xsim 仿真 | B | `sim/tb/`、`tests/branch/` | CPU basic通过 | 6种分支条件正确 | TODO |
 
-## 5. 成员职责索引
+## 4. P2 任务（冲刺项，不阻塞主线）
 
-详细职责、测试拆分、报告分工见：
+| 优先级 | 任务 | 负责人 | 路径 | 依赖 | 完成标准 | 状态 |
+|---|---|---|---|---|---|---|
+| P2 | 五级流水线冲刺 | D | `src/core/pipeline/` | 多周期CPU稳定 | 有设计说明或可运行原型 | TODO |
+| P2 | forwarding/stall/flush | D | `src/core/pipeline/` | 流水线原型 | hazard测试可解释 | TODO |
+| P2 | BTB 分支预测 | D | `src/core/pipeline/btb.v` | 流水线原型 | 分支预测正确率可统计 | TODO |
+| P2 | UART 外设实现 | C | `src/io/uart.v` | SoC稳定 | 可收发字符 | TODO |
+| P2 | 更多性能分析图表 | A + D | `reports/tables/` | PPA数据 | 图表可用于答辩 | TODO |
+| P2 | MIPS 模式接入 | A | `src/core/` | 参考minisys_unified各wrapper | CPU_MODE 2-4可用 | TODO |
 
-- `docs/team/member_roles.md`
-- `docs/team/daily_workflow.md`
-- `docs/team/review_checklist.md`
+## 5. 成员职责索引（整合后）
+
+| 成员 | 已完成 | 当前任务 | 下一任务 |
+|---|---|---|---|
+| A 刘文涛 | ✅ 6仓库分析选型 + 统一总线架构 + 24个RTL文件 + 文档同步 | 协助B调试xsim问题、接口维护 | RV32I单周期wrapper、集成测试 |
+| B 张淇 | — | 🔴 ALU/regfile/control 单元testbench + CPU basic xsim仿真 | LW/SW/branch仿真、CPU周期记录 |
+| C 胡文龙 | — | 🔴 Vivado工程建立 + synthesis/impl | 上板LED/数码管验证 |
+| D 王博生 | — | 🔴 MAC/perf_counter testbench | 点积测试程序、PPA初稿 |
 
 ## 6. Git 提交节点建议
 
 ```text
-docs: add team roles and collaboration rules
-docs: define rv32i subset and memory map
-rtl: add alu and regfile
-sim: add alu and regfile tests
-rtl: add multi-cycle cpu basic path
-sim: add cpu basic program
-rtl: integrate bram and mmio
-rtl: add mac extension
+docs: add four-repo deep merge plan
+docs: add integration report and updated division of labor
+rtl: add unified bus system and peripherals
+rtl: add rv32i multi-cycle cpu with mac and performance counters
+rtl: add soc integration and board-level top
+sim: add alu and regfile testbenches
+sim: add cpu basic program simulation
+rtl: add vivado project and synthesis results
 test: add dot product comparison
 report: add vivado performance data
 ```
+
+## 7. 当前阻塞项与风险
+
+| 阻塞/风险 | 影响 | 负责人 | 解决方案 |
+|---|---|---|---|
+| Vivado 2018.3 环境未确认 | C无法建工程 | C | 优先完成环境安装截图 |
+| xsim 仿真未跑通 | B无法验证CPU | B | 优先写tb_alu/tb_regfile |
+| 复位按钮极性待实测 | 上板可能异常 | C | Vivado最小工程实测P20 |
+| 时钟分频方案待确认 | SoC时钟频率不确定 | C+A | 参考minisys_unified clk_gen.v |

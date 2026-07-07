@@ -28,6 +28,9 @@ reports/vivado/*
 # Local teacher-provided install packages and raw board materials
 安装包资料/
 
+# Reference repositories (read-only design reference)
+参考仓库/
+
 # OS/editor
 .DS_Store
 Thumbs.db
