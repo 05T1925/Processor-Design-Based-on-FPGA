@@ -218,6 +218,8 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 | `docs/design/task_board.md` | 整合后更新的任务看板（DONE/TODO状态 + 成员职责索引） | 全员 |
 | `docs/design/memory_map.md` | 统一总线版地址映射（`0xFFFF_FCxx`外设区 + `addr[9:4]`二级译码） | B/C/D |
 | `docs/planning/optimization_roadmap.md` 🆕 | 拓展方向可行性分析 + PPA资源预算 + 六方向推荐优先级 + 一周优化路线图 + 答辩主线建议 | 全员 |
+| `docs/ai_logs/ai_declaration.md` 🆕 | AI辅助工具使用声明表（教师要求）：15个模块改造说明+独立设计占比+学术诚信承诺 | 全员 |
+| `docs/team/lab_test_plan.md` 🆕 | 明日实验室测试计划：ALU→regfile→control→CPU 4项测试+应急预案 | B+A |
 
 ## 开发前规则
 
