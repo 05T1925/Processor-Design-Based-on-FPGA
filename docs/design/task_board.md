@@ -2,7 +2,7 @@
 
 用途：拆分第一版开发任务，定义优先级、负责人、路径、依赖、完成标准和当前状态。
 
-最后更新时间：2026-07-06
+最后更新时间：2026-07-07
 
 ## 1. 优先级定义
 
@@ -27,7 +27,7 @@ DONE
 |---|---|---|---|---|---|---|
 | P0 | ISA 冻结 | A 刘文涛 | `docs/design/isa.md` | 课程要求、CPU 指令范围 | RV32I 子集和 MAC 扩展编码明确 | DONE |
 | P0 | memory map 冻结 | A 刘文涛 + C 胡文龙 | `docs/design/memory_map.md` | SoC/MMIO 需求 | RAM、MMIO、status/result 地址明确 | DONE |
-| P0 | 公共接口规范 | A 刘文涛 | `docs/design/interfaces.md` | ISA、memory map、模块划分 | clk/rst、CPU、memory、I/O、MAC 接口可执行；板级端口待官方 `.xdc` 后核对 | DONE |
+| P0 | 公共接口规范 | A 刘文涛 | `docs/design/interfaces.md` | ISA、memory map、模块划分 | clk/rst、CPU、memory、I/O、MAC 接口可执行；Minisys 板级端口已按老师资料核对 | DONE |
 | P0 | ALU | B 张淇 | `src/core/alu.v`, `sim/tb/tb_alu.v` | ISA | 单测通过，基础运算正确 | TODO |
 | P0 | regfile | B 张淇 | `src/core/regfile.v`, `sim/tb/tb_regfile.v` | interfaces、MAC 第三读口需求 | x0 恒为 0，读写和第三读口正确 | TODO |
 | P0 | control/imm/branch | B 张淇 | `src/core/control_unit.v`, `src/core/imm_gen.v`, `src/core/branch_unit.v` | ISA | 基础指令控制信号和分支判断正确 | TODO |
@@ -43,7 +43,7 @@ DONE
 | P1 | mem_bus 与 MMIO | C 胡文龙 | `src/memory/mem_bus.v`, `src/io/` | memory map、CPU memory 接口 | data memory 与 MMIO 地址译码正确 | TODO |
 | P1 | LED/拨码/数码管 | C 胡文龙 | `src/io/gpio_led.v`, `src/io/gpio_switch.v`, `src/io/seg7_driver.v` | MMIO、board_demo | LED 显示状态，seg7 显示 result/cycle | TODO |
 | P1 | `soc_top` 集成 | C 胡文龙 + A 刘文涛 | `src/soc/soc_top.v` | CPU、memory、MMIO | CPU + memory + I/O 仿真连通 | TODO |
-| P1 | `minisys_top` 和约束 | C 胡文龙 | `src/board/minisys_top.v`, `constraints/minisys.xdc` | 组长安装环境后确认官方 `.xdc` | 端口与官方约束一致，bitstream 可生成 | BLOCKED |
+| P1 | `minisys_top` 和约束 | C 胡文龙 | `src/board/minisys_top.v`, `constraints/minisys.xdc` | 老师资料中的 Minisys `.xdc` 已确认 | 端口与约束一致，后续接入 `soc_top` 后 bitstream 可生成 | TODO |
 | P1 | `mac_unit` | D 王博生 | `src/core/mac_unit.v`, `sim/tb/tb_mac.v` | regfile 第三读口 | MAC 单测通过，结果可写回 | TODO |
 | P1 | MAC 控制与写回集成 | D 王博生 + B 张淇 | `src/core/control_unit.v`, `src/core/cpu_top.v` | `mac_unit`、control、regfile | MAC 指令能译码、执行、写回 rd | TODO |
 | P1 | 性能计数器 | D 王博生 | `src/core/csr_perf_counter.v`, `sim/tb/tb_perf_counter.v` | CPU halted/retire/mac pulse | cycle、instret、mac_count 统计正确 | TODO |

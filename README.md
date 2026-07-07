@@ -7,7 +7,7 @@
 - 课程题目：题目 B，基于 FPGA 开发板的处理器设计
 - 硬件平台：Minisys FPGA 实验板，Xilinx Artix-7 XC7A100T
 - 开发环境：Vivado 2018.3，组内主仿真工具为 Vivado xsim
-- 当前阶段：小组协作准备、MVP 协作文档与接口规范冻结
+- 当前阶段：小组协作准备、MVP 协作文档与接口规范冻结；Minisys 主线 `.xdc` 已确认并落到 `constraints/minisys.xdc`
 
 ## 当前主线
 
@@ -82,6 +82,21 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 - 不要把安装包、破解文件、license 文件、大型软件包上传到 GitHub。
 - 不要把 Vivado 自动生成的临时工程文件提交到仓库。
 - 环境装好后先阅读 README 和分工文档，再领取任务。
+
+## 当前约束状态
+
+- 已从老师资料中确认 Minisys 主约束来源，并整理为 `constraints/minisys.xdc`。
+- 板级端口统一为 `clk/rst_n/sw[15:0]/led[15:0]/seg[7:0]/an[7:0]`。
+- 约束审计见 `docs/design/board_constraints_audit.md` 和 `docs/hardware/minisys_pinout.md`。
+- 当前尚未在 Vivado 2018.3 中综合/实现验证，bitstream 通过后才能把上板任务标为 DONE。
+
+## 下一步顺序
+
+1. C 先在 Vivado 2018.3 中建立最小工程，加载 `src/board/minisys_top.v` 与 `constraints/minisys.xdc`。
+2. 实测 P20 复位按钮极性，必要时只修改 `minisys_top` 的复位转换。
+3. 实现 `seg7_driver` 的低有效十六进制扫描显示并单测。
+4. 接入 `soc_top`、BRAM、MMIO 和 display mux。
+5. 跑 xsim 后再生成 bitstream，并保存 utilization/timing 截图。
 
 ## 开发前规则
 

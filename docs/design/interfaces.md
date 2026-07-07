@@ -2,7 +2,7 @@
 
 用途：作为四人小组后续分模块开发的接口标准。公共接口变更必须先更新本文档。
 
-最后更新时间：2026-07-06
+最后更新时间：2026-07-07
 
 ## 1. 全局信号规范
 
@@ -138,41 +138,53 @@
 
 `gpio_switch`：
 
-- `sw[23:0]`
+- `sw[15:0]`
 - `rdata[31:0]`
 
 `seg7_driver`：
 
 - `clk,rst,value[31:0]`
 - `seg[7:0], an[7:0]`
+- Minisys 数码管为共阳极，`seg` 和 `an` 均低电平有效。
 
 ## 12. `soc_top` 接口
 
-建议：
+RTL 尚未完成时先冻结语义接口，后续实现应尽量采用：
 
 ```text
-input        clk
-input        rst
-input [23:0] sw
-output [7:0] led
-output [7:0] seg
-output [7:0] an
+input         clk
+input         rst
+input  [15:0] sw_i
+output [15:0] led_o
+output [7:0]  seg_data_o
+output [7:0]  seg_sel_o
 ```
 
-## 13. `minisys_top` 临时接口
+## 13. `minisys_top` 板级接口
 
-官方 `.xdc` 到位前采用：
+老师资料中的 Minisys 约束已确认，项目统一采用 `constraints/minisys.xdc` 和以下板级端口。`Minisys_Master.xdc` 原始端口名带有 MIPS 工程痕迹，项目不把这些名字扩散到内部模块。
 
 ```text
 input        clk
 input        rst_n
-input [23:0] sw
-output [7:0] led
+input [15:0] sw
+output [15:0] led
 output [7:0] seg
 output [7:0] an
 ```
 
-`.xdc` 到位后，LED、拨码开关、数码管、时钟、复位等顶层端口命名必须按 Minisys 官方约束统一。如果官方命名不同，由 `minisys_top` 做映射，不允许各模块私自改端口风格。
+`minisys_top` 内部把板级 `rst_n` 转为内部高有效 `rst`。`seg[7:0]` 和 `an[7:0]` 均按 Minisys 共阳极数码管低电平有效方式驱动。
+
+板级端口映射表：
+
+| 功能 | 官方/主线 `.xdc` 端口名 | `minisys_top` 端口 | `soc_top` 内部端口 | 位宽 | 有效电平 | 备注 |
+|---|---|---|---|---:|---|---|
+| 100MHz 主时钟 | `clk` | `clk` | `clk` | 1 | 上升沿 | Y18 |
+| 板级复位按钮 | `rst_n` | `rst_n` | `rst` | 1 | 内部高有效 | P20；实际按钮极性需上板复核 |
+| 拨码开关 | `sw[15:0]` | `sw[15:0]` | `sw_i[15:0]` | 16 | 高电平为 1 | 第一版 SW0-SW15 |
+| 用户 LED | `led[15:0]` | `led[15:0]` | `led_o[15:0]` | 16 | 高电平点亮 | 第一版低 8 位显示核心状态 |
+| 七段段选 | `seg[7:0]` | `seg[7:0]` | `seg_data_o[7:0]` | 8 | 低电平点亮 | `seg[0]=CA`，`seg[7]=DP` |
+| 七段位选 | `an[7:0]` | `an[7:0]` | `seg_sel_o[7:0]` | 8 | 低电平选中 | `an[0]=A0`，`an[7]=A7` |
 
 ## 14. 接口变更流程
 

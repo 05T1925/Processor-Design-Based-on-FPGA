@@ -25,6 +25,9 @@ sim/wave/*
 reports/vivado/*
 !reports/vivado/.gitkeep
 
+# Local teacher-provided install packages and raw board materials
+安装包资料/
+
 # OS/editor
 .DS_Store
 Thumbs.db

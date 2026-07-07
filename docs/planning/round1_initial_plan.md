@@ -48,7 +48,7 @@ MAC 自定义指令 + 性能计数器 + 点积对比 + PPA 分析
 
 ### 2.4 约束文件
 
-Minisys 官方 `.xdc` 已确认存在，等待组长后续提供老师给的详细资料。本轮先初始化 `constraints/` 目录，不手写管脚约束，避免误配。
+Minisys 官方 `.xdc` 已确认存在；2026-07-07 已从老师资料中核对 `Minisys_Master.xdc` 和中文实验约束，并落到 `constraints/minisys.xdc`。
 
 ### 2.5 报告与过程记录
 
@@ -238,13 +238,13 @@ docs/ai_logs/ai_usage_log.md
 - 第一版 CPU 采用多周期 FSM。
 - MAC 接受 `rd_old` 第三读口方案。
 - HALT 统一使用 `EBREAK = 0x00100073`。
-- `.xdc` 到位后，板级端口命名按 Minisys 官方约束统一。
+- 板级端口命名已按老师资料中的 Minisys 约束统一，详见 `docs/hardware/minisys_pinout.md`。
 - 第一阶段手写少量机器码，第二阶段使用 Python 脚本生成 `.mem`。
 - 统一使用 Vivado xsim；ModelSim 只作为个人可选。
 
 当前阻塞项：
 
-- 等待老师提供 Minisys 官方 `.xdc` 和更详细资料。
+- Minisys 主线 `.xdc` 已确认，后续只需在 Vivado 工程中接入 `constraints/minisys.xdc` 并验证 bitstream。
 - 需要确认小组成员姓名、学号、具体分工。
 
 ## 10. 下一轮建议任务

@@ -17,7 +17,7 @@
 - 演示方式：第一阶段使用数码管显示结果和周期；后期进阶演示可增加 UART 输出。
 - MAC 指令：允许作为自定义 ISA 扩展，采用 `rd_old` 第三读口方案。
 - HALT：统一使用 `EBREAK = 0x00100073`。
-- 约束文件：Minisys 官方 `.xdc` 后续由组长补充更详细资料。
+- 约束文件：Minisys 主线约束已按老师资料核对，见 `constraints/minisys.xdc` 和 `docs/hardware/minisys_pinout.md`。
 
 ## 3. 推荐目标分级
 

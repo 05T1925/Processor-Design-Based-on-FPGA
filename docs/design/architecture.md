@@ -2,7 +2,7 @@
 
 用途：说明项目第一版最小可行系统的整体结构、数据流、FSM 执行流程，以及后续迁移到流水线的路径。
 
-最后更新时间：2026-07-06
+最后更新时间：2026-07-07
 
 ## 1. 目标分级
 
@@ -92,6 +92,14 @@ Minisys Board
 - `gpio_led`：LED 输出寄存器。
 - `gpio_switch`：拨码开关输入。
 - `seg7_driver`：七段数码管扫描显示。
+
+`minisys_top` 只负责板级映射，不承载 CPU 或 MMIO 业务逻辑：
+
+- 接入 `constraints/minisys.xdc` 中的板级端口。
+- 将板级复位转换为内部高有效 `rst`。
+- 将 `sw/led/seg/an` 映射到 `soc_top` 的语义化端口。
+
+`soc_top` 才负责 CPU、BRAM、MMIO、LED、switch、seg7 的系统集成。`mac_unit` 和 `csr_perf_counter` 属于 CPU/核心扩展路径，通过 MMIO 或 display mux 暴露给板级显示。
 
 ## 6. FSM 状态
 

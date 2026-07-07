@@ -91,7 +91,7 @@
 | 风险 | 降级方案 |
 |---|---|
 | CPU basic 未跑通 | 暂停 MAC/流水线冲刺，集中修 P0 |
-| 上板端口未确认 | 先完成 xsim 和综合前检查，等待官方 `.xdc` |
+| 上板端口不匹配 | 以 `constraints/minisys.xdc` 和 `docs/hardware/minisys_pinout.md` 为准，先修 `minisys_top` 映射 |
 | 数码管异常 | 先用 LED 显示低位结果或状态 |
 | MAC 时序异常 | 报告中保留 MAC 仿真和 PPA 分析，上板演示基础 CPU |
 | 流水线未完成 | 作为冲刺探索记录，不影响主线验收 |

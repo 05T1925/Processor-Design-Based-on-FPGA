@@ -42,7 +42,7 @@
 - 涉及文件：`docs/design/guide_feasibility_review.md`、`docs/design/project_paths.md`、`docs/planning/round1_initial_plan.md`、`docs/ai_logs/ai_usage_log.md`
 - 提示词摘要：根据课程资料、Minisys 平台、人工确认的项目口径，检查开发指南可行性，初始化目录，生成第一轮规划日志。
 - AI 输出摘要：生成第一轮规划文档、路径规划和 AI 日志初稿。
-- 人工审阅内容：待组长审阅。
+- 人工审阅内容：需人工确认部分已统一。
 - 人工修改内容：待填写。
 - 验证方式：人工阅读检查，未进入 RTL 仿真。
 - 验证结果：文档已生成。
@@ -59,7 +59,7 @@
 - 涉及文件：`README.md`、`.gitignore`、`docs/design/*.md`、`docs/planning/round2_mvp_plan.md`
 - 提示词摘要：根据第二阶段最小可行实现方案和组长确认决策，拆分生成架构、ISA、接口、测试、演示、开发规范、任务看板、风险和规划文档。
 - AI 输出摘要：生成 MVP 协作文档，固化多周期 FSM、MAC 第三读口、EBREAK HALT、xsim 主流程等决策。
-- 人工审阅内容：待组长审阅。
+- 人工审阅内容：需人工确认部分已统一，具体接口统一规范等待安装好环境后确定。
 - 人工修改内容：待填写。
 - 验证方式：组长人工审阅；本轮不生成 RTL。
 - 验证结果：文档完整性、一致性、目录、`.gitignore`、临时文件检查通过；待组长最终人工审阅。
@@ -82,3 +82,20 @@
 - 验证结果：文档已同步，待 Git 提交和推送。
 - 是否合并：待提交。
 - 备注：本轮只修改 Markdown 文档。
+
+### 记录编号：AI-20260707-01
+
+- 日期：2026-07-07
+- 成员：刘文涛
+- 负责模块：Minisys 板级约束、顶层端口和硬件资料核对
+- 工具：Codex
+- 使用阶段：老师资料深度阅读、`.xdc` 确认、`minisys_top` 和 LED/拨码/数码管接口统一
+- 涉及文件：`constraints/minisys.xdc`、`src/board/minisys_top.v`、`docs/hardware/minisys_pinout.md`、`docs/design/interfaces.md`、`docs/design/board_demo.md`、`docs/design/task_board.md`、`docs/planning/team_division.md`
+- 提示词摘要：阅读老师提供的 Minisys 安装包资料，寻找项目未知但需要的 Minisys 官方 `.xdc`，确认并统一 `minisys_top.v`、LED、数码管和拨码开关顶层端口信息。
+- AI 输出摘要：确认 `Minisys_Master.xdc` 为主约束来源，结合中文实验约束补齐数码管/LED/拨码引脚，生成项目主线 `constraints/minisys.xdc`、板级顶层外壳和管脚核对文档。
+- 人工审阅内容：需人工在 Vivado 2018.3 中加载 `constraints/minisys.xdc` 并结合实物板确认复位按钮实际极性。
+- 人工修改内容：待 C/A 上板验证后补充。
+- 验证方式：资料交叉核对、`rg` 文档一致性扫描；当前 PATH 下无 Vivado/iverilog/verilator，未做综合或 Verilog 编译。
+- 验证结果：主线文档中“等待官方 `.xdc`”状态已清理；约束和顶层端口已统一。
+- 是否合并：待提交。
+- 备注：本轮未修改用户已有的安装包资料目录。

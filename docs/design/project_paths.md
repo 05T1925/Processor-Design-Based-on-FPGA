@@ -72,7 +72,7 @@
 
 | 路径 | 计划内容 |
 |---|---|
-| `constraints/minisys.xdc` | Minisys 官方约束文件，等待老师资料 |
+| `constraints/minisys.xdc` | 已按老师资料中的 `Minisys_Master.xdc` 和中文实验约束核对后的项目主线约束 |
 | `scripts/` | Vivado/仿真/数据收集脚本 |
 | `reports/figures/` | 架构图、波形图、上板照片 |
 | `reports/tables/` | 性能和资源表 |
