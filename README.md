@@ -217,7 +217,7 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 | `docs/team/member_roles.md` | 整合后重新规划的ABCD分工（代码已由A完成→B/C/D负责验证调试扩展） | 全员 |
 | `docs/design/task_board.md` | 整合后更新的任务看板（DONE/TODO状态 + 成员职责索引） | 全员 |
 | `docs/design/memory_map.md` | 统一总线版地址映射（`0xFFFF_FCxx`外设区 + `addr[9:4]`二级译码） | B/C/D |
-| `docs/ai_logs/ai_usage_log.md` | AI使用记录（含AI-20260708-01/02 深度合并记录） | 全员 |
+| `docs/planning/optimization_roadmap.md` 🆕 | 拓展方向可行性分析 + PPA资源预算 + 六方向推荐优先级 + 一周优化路线图 + 答辩主线建议 | 全员 |
 
 ## 开发前规则
 

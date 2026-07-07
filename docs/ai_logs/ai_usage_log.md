@@ -236,3 +236,75 @@
   - 后续B/C/D的职责从"从零开发"变为"验证+调试+扩展"，降低了技术门槛
   - 独创模块（mac_unit.v、csr_perf_counter.v）在参考仓库中没有直接对应，具有创新性
   - CPU_MODE参数化设计为后续PPA对比和答辩提供了灵活的实验平台
+
+### 记录编号：AI-20260708-03
+
+- 日期：2026-07-08
+- 成员：刘文涛
+- 负责模块：文档同步、README终版更新、全局一致性复检、Git提交推送
+- 工具：Codex
+- 使用阶段：
+  - 完成 memory_map.md 更新为统一总线地址映射
+  - 完成 interfaces.md soc_top/minisys_top 端口更新及多仓库.xdc交叉验证表
+  - 完成 member_roles.md 重新分工（反映A完成代码整合后的新ABCD职责）
+  - 完成 task_board.md 状态更新（P0 RTL全部标DONE）
+  - 完成 ai_usage_log.md 补充（AI-20260708-01/02/03）
+  - 完成 README.md 终版（统一架构主线、BCD快速开始、关键新文档索引）
+  - 完成 PROJECT_INDEX.md 同步（新增integration_report.md等条目）
+  - 将 `参考仓库/` 加入 .gitignore
+  - git add → commit → push 到 GitHub
+- 涉及文件：
+  - 更新：`README.md`、`docs/design/memory_map.md`、`docs/design/interfaces.md`、`docs/design/task_board.md`、`docs/team/member_roles.md`、`docs/PROJECT_INDEX.md`、`docs/ai_logs/ai_usage_log.md`、`.gitignore`
+  - 新增：无（本记录为最终同步）
+- 提示词摘要：要求 Codex 全面检查全局项目和markdown文档一致性，更新README为终版反映整合后的项目状态，将 `参考仓库/` 加入 .gitignore，执行 git commit 并 push 到 GitHub。
+- AI 输出摘要：
+  - 全局终检：确认24个RTL文件 + 2个测试文件 + 7个更新文档 + 2个新增文档全部就位
+  - README更新：统一架构主线图、BCD快速开始（从零开发→验证调试）、关键新文档索引表、开发前规则补充
+  - 将 `参考仓库/` 加入 .gitignore
+  - 一次 commit 提交全部36个文件变更（+4007行，-431行），push到main分支
+- 人工审阅点：
+  - 确认 `参考仓库/` 被 .gitignore 正确排除
+  - 确认 BCD 的快速开始描述准确反映新职责
+  - 确认开发前规则新增"参考仓库代码仅供设计参考"条目
+- 人工修改内容：
+  - 修正 README 编辑过程中 "关键新文档" 与 "开发前规则" 内容混淆
+  - 新增 "参考仓库代码仅供设计参考" 规则
+- 验证方式：`git status` 检查工作区清洁 + `git log --oneline` 验证提交 + `git ls-remote` 验证远程同步
+- 验证结果：本地与远程 HEAD 一致（b8d9ba7），工作区清洁
+- 是否合并：已提交并推送到 GitHub main 分支
+- 备注：
+  - 本次提交后项目从"只有设计文档"转变为"有完整统一RTL代码库"，是项目里程碑
+  - A 的代码整合阶段正式结束，后续进入 B/C/D 验证调试阶段
+
+### 记录编号：AI-20260708-04
+
+- 日期：2026-07-08
+- 成员：刘文涛
+- 负责模块：后续优化方向可行性分析与拓展路线图规划
+- 工具：Codex
+- 使用阶段：基于 Minisys Artix-7 XC7A100T 硬件资源约束，分析课程要求的六个拓展方向的可行性、资源预算和实现路径，制定优化路线图
+- 涉及文件：
+  - 新增：`docs/planning/optimization_roadmap.md`（拓展方向可行性分析与优化路线图）
+  - 更新：`README.md`、`docs/PROJECT_INDEX.md`
+- 提示词摘要：要求 Codex 基于 XC7A100T 的硬件资源（LUT/FF/BRAM/DSP/IO数量），分析六项拓展方向，评估每项的可行性+硬件开销+预期性能收益+实现难度+与本项目现有基础的契合度，给出推荐优先级，制定P0→P1→P2渐进式路线图。
+- AI 输出摘要：
+  - 六方向逐一分析：流水线冒险（⭐⭐⭐⭐⭐推荐）、Cache（⭐⭐⭐中）、浮点/乘除（⭐⭐中）、自定义ISA（⭐⭐⭐中）、MAC加速（⭐⭐⭐⭐⭐推荐）、PPA对比（⭐⭐⭐⭐推荐）
+  - 优化路线图：P0（MAC+Perf已实现）→ P1（五级流水线+forwarding+点积对比+PPA）→ P2（BTB+Cache+DSP MAC+多方案PPA对比）
+  - 资源预算估算：每个方向的LUT/FF/BRAM/DSP预期用量，总和不超过XC7A100T的80%
+  - 时间规划：1周内可完成P1项，P2项作为答辩亮点
+- 人工审阅点：
+  - 验证XC7A100T的硬件资源容量是否准确
+  - 确认 MAC（方向5）已实现，需要新增的是DSP48E1精调
+  - 确认 浮点（方向3）对本项目ROI较低
+  - 确认 PPA对比（方向6）贯穿所有方向
+- 人工修改内容：
+  - 调整推荐优先级顺序（将MAC和流水线提到最高优先）
+  - 补充已实现部分的说明（MAC方向已完成组合逻辑版本）
+  - 明确PPA对比需要 C(Vivado数据) + D(分析) + A(复检) 三人协作
+- 验证方式：与课程任务书 "拓展层次" 要求逐项对齐
+- 验证结果：六个方向全覆盖，与本项目现有工程基础无缝衔接
+- 是否合并：待提交
+- 备注：
+  - 本分析为后续 B/C/D 推进验证完成后进行优化拓展提供明确方向
+  - MAC方向（方向5）已在P0实现，P1需要做的是DSP48E1精调+流水线版本
+  - PPA对比（方向6）是贯穿所有方向的"元分析"，需要在报告中以表格形式呈现
