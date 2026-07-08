@@ -1,4 +1,4 @@
-# AI 使用日志
+﻿# AI 使用日志
 
 ## 使用记录模板
 
@@ -356,3 +356,69 @@
   - AI声明表是答辩必需材料，需要每组提交
   - MAC(方向5)和Perf Counter是本项目区别于四个参考仓库的核心创新
   - 明早 B+A 进实验室，本记录可作为测试前的最终检查单
+
+### 记录编号：AI-20260708-06
+
+- 日期：2026-07-08
+- 成员：张淇
+- 负责模块：Vivado 工程建立、ALU/寄存器堆/控制单元 testbench 编写与仿真、CPU 基础程序联调、提交前文件核对
+- 工具：Codex
+- 使用阶段：
+  - 根据组内分工与仓库现状确认成员 B 的工作边界，明确本阶段以“先仿真验证、后综合上板”为主线
+  - 协助选择并确认 Vivado 2018.3 作为当前兼容版本，完成本地仓库克隆后工程建立思路梳理
+  - 指导将 `src` 目录源码与 `constraints/minisys.xdc` 加入 Vivado 工程，区分综合顶层与仿真顶层
+  - 读取 `alu.v`、`regfile.v`、`control_unit.v`、`soc_top.v`、`riscv_mc_cpu.v` 等文件接口，逐步生成并调整 testbench
+  - 结合 Vivado Messages、Tcl Console、`xvlog.log`、xsim 波形窗口定位编译与行为级仿真问题
+  - 对 CPU 多周期状态机、分支控制与测试程序装载流程进行联调，直至 `basic_test.hex` 可稳定跑到 `EBREAK/HALT`
+  - 在准备提交前，检查本地改动文件清单与最终版本内容，确认哪些文件属于本轮需要保留和上传的结果
+- 涉及文件：
+  - RTL：`src/core/alu.v`、`src/core/regfile.v`、`src/core/control_unit.v`、`src/core/riscv_mc_cpu.v`
+  - 顶层/存储器：`src/soc/soc_top.v`、`src/memory/inst_ram.v`
+  - 约束：`constraints/minisys.xdc`
+  - 仿真：`sim/tb/tb_alu.v`、`sim/tb/tb_regfile.v`、`sim/tb/tb_control_unit.v`、`sim/tb/tb_cpu_basic.v`
+  - 测试程序：`sim/programs/basic_test.hex`
+  - 日志：`docs/ai_logs/ai_usage_log.md`
+- 提示词摘要：要求 Codex 按成员 B 的实际任务，结合本地 Vivado 工程和仓库 RTL，指导工程建立、阅读模块接口、生成与项目现有代码相匹配的 testbench、分析 xsim 报错、修正 CPU 仿真过程中暴露的问题，并在最终提交前检查本地文件是否均为更新后的正确版本。
+- AI 输出摘要：
+  - 在环境准备阶段，给出 Vivado 版本选择建议、GitHub 仓库克隆流程、本地工程建立步骤以及 `minisys_top`/仿真顶层的区分方法
+  - 在 ALU 仿真阶段，基于项目实际 `alu.v` 接口生成 `tb_alu.v`，覆盖 `ADD`、`SUB`、`AND`、`OR`、`XOR`、`SLL`、`SRL`、`SRA`、`SLT`、`SLTU`、`LUI`、`AUIPC`、JUMP/MAC 透传等功能点
+  - 在寄存器堆仿真阶段，生成 `tb_regfile.v`，覆盖 `x0` 恒为 0、寄存器普通读写、第三读口 `rd_old_data`、写后读前递等关键行为
+  - 在控制单元仿真阶段，生成 `tb_control_unit.v`，覆盖 RV32I 基本指令译码、`LW/SW`、`BEQ/JAL/JALR`、`LUI/AUIPC`、`EBREAK`、自定义 `MAC` 和非法指令检测
+  - 在 CPU 基础联调阶段，结合 `soc_top.v`、`inst_ram.v`、`riscv_mc_cpu.v` 的实例层次，生成 `tb_cpu_basic.v`，通过层次路径清空 RAM、加载 `basic_test.hex`、等待 `HALT` 并输出关键寄存器与内存结果
+  - 在问题定位阶段，辅助识别并确认 `regfile.v` 中循环变量声明位置与 Vivado 2018.3 的兼容性问题，以及 `riscv_mc_cpu.v` 中状态机写法、`branch_taken` 更新条件和 PC 更新路径的逻辑问题
+  - 在提交前检查阶段，辅助核对本地 Git 变更，确认本轮核心成果文件为 `src/core/regfile.v`、`src/core/riscv_mc_cpu.v` 与 4 个 testbench 文件
+- 人工审阅内容：
+  - 人工核对 AI 生成 testbench 的模块名、端口名、宏定义和信号方向是否与仓库现有 RTL 完全一致，避免因接口不匹配导致“测试文件看似正确但不能真实验证模块”
+  - 人工检查 `tb_cpu_basic.v` 中 `soc_top` 实例端口、内部 RAM 路径、`debug_pc/debug_state` 信号以及 `basic_test.hex` 路径是否与本地工程一致
+  - 人工比对 CPU 仿真异常时的现象与输出，包括波形窗口短暂弹出、编译报错、`debug_pc` 跑偏、关键寄存器不符合预期等，确认问题并非仅由 Vivado 消息缓存导致
+  - 人工确认本轮仅完成仿真级验证，不能将结果表述为“已完成综合/实现/bitstream/上板”
+  - 人工检查提交前文件内容，确认当前工程中实际通过仿真的代码与待提交文件保持一致，没有遗漏 testbench，也没有把未验证版本误加入 Git
+- 人工修改内容：
+  - 按本地工程的真实模块接口与仿真需求，对 `tb_alu.v`、`tb_regfile.v`、`tb_control_unit.v`、`tb_cpu_basic.v` 的测试项、检查条件和层次引用进行人工确认与局部调整
+  - 将 `regfile.v` 中 `integer i` 从 `always` 块内部调整到模块级声明，以适配 Vivado 2018.3 的编译要求，同时保持寄存器堆复位行为不变
+  - 对 `riscv_mc_cpu.v` 的多周期状态机进行人工确认和修正，采用 `state` 时序更新、`next_state` 组合生成的方式梳理流程
+  - 对 `branch_taken` 的更新逻辑进行人工确认，使其仅在真正分支指令下由分支判断单元结果驱动，避免普通指令错误影响 PC 跳转
+  - 在 `tb_cpu_basic.v` 中保留对 `basic_test.hex` 的显式装载逻辑，确保测试程序能够实际进入指令存储器运行
+- 验证方式：
+  - 在 Vivado 2018.3 中通过 `Run Behavioral Simulation` 运行 xsim 仿真
+  - 查看 Messages、Tcl Console、`xvlog.log` 和必要时的波形窗口，定位语法/编译错误和行为级异常
+  - 通过 `$display` 输出检查单模块与系统级测试是否达到预期结果
+  - 以 CPU 最终能否进入 `EBREAK/HALT`、关键寄存器和数据存储器值是否与测试程序预期一致作为系统级通过标准
+  - 在提交前通过本地 Git 改动检查再次确认需要提交的文件列表与最终版本状态
+- 验证结果：
+  - `tb_alu.v` 仿真通过，确认 ALU 算术、逻辑、移位、MOVE/JUMP/MAC 相关结果与预期一致
+  - `tb_regfile.v` 仿真通过，确认 `x0` 恒为 0、寄存器三读一写工作正常、写后读前递行为正确
+  - `tb_control_unit.v` 仿真通过，确认 RV32I 基本指令、自定义 `MAC`、`EBREAK` 及非法指令译码行为正确
+  - `tb_cpu_basic.v` 仿真通过，CPU 能稳定运行测试程序并进入 `HALT`，关键输出结果为：
+    - `CPU HALTED`
+    - `debug_pc = 0x00000020`
+    - `data_ram[0] = 0x0000001e`
+    - `x3 = 0x0000001e`
+    - `x6 = 0x0000001e`
+  - 提交前检查确认当前本地需纳入本轮成果的文件包括：`src/core/regfile.v`、`src/core/riscv_mc_cpu.v`、`sim/tb/tb_alu.v`、`sim/tb/tb_regfile.v`、`sim/tb/tb_control_unit.v`、`sim/tb/tb_cpu_basic.v`
+- 是否合并：待提交
+- 备注：
+  - 本条记录仅覆盖成员 B 今天实际使用 AI 辅助完成的内容，包括工程配置指导、testbench 生成与调整、仿真报错分析、CPU 联调辅助和提交前检查
+  - 所有 AI 输出均经过人工审阅后才用于本地工程，核心 RTL 与测试内容均通过 Vivado xsim 或人工检查验证后保留
+  - 截至本记录，成员 B 负责部分已完成仿真级闭环验证，后续若进入综合、实现或上板测试，应另行补充新的 AI 使用记录
+
