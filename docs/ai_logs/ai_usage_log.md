@@ -515,3 +515,57 @@
 - 备注：
   - 本条记录仅覆盖成员 B 在 2026-07-09 当天实际使用 AI 辅助完成的 implementation 判读、bitstream 检查、仓库清理与日志补录工作
   - Vivado 生成目录和 `.bit` 文件仅用于本地验证，不作为仓库长期跟踪文件
+
+### 记录编号：AI-20260709-03
+
+- 日期：2026-07-09
+- 成员：刘文涛
+- 负责模块：Vivado 综合阻断问题诊断与修复、C 组成员工作审核与协作、RTL 多版本兼容性修复
+- 工具：Codex
+- 使用阶段：
+  - 审核 C 组成员（胡文龙）的工作报告，逐项分析其发现的 3 个 RTL bug（`pc_reg.v` wire/reg 语法错误、`$clog2` 不兼容 Vivado 2017.4、`tb_cpu_basic.v` 硬编码路径）
+  - 预判诊断并修复 3 个 Vivado 综合阻断问题：`soc_top.v` 跨目录 include 路径、`riscv_sc_wrapper.v` 模块缺失导致 generate 块 elaboration 失败、`minisys_top.v` 默认使用心跳灯而非 SoC 模式
+  - 分析 C 组 Vivado 2017.4 batch 模式在 Windows 11 上的 `TclStackFree` 崩溃——通过隔离测试确认为工具链 IPC bug 而非设计问题，建议使用 GUI 模式或 Windows 7 兼容模式
+  - 全面扫描全部 25 个 Verilog 文件，检查 wire/reg 声明一致性、include 路径正确性、Vivado 2017.4 / 2018.3 双版本语法兼容性
+  - 拉取成员 B（张淇/Evelyn）的远端提交（constraints 配置电压修复 + .gitignore 完善 + README 工程重建说明），与本地的 RTL 修复进行无冲突合并
+- 涉及文件：
+  - RTL 修复：`src/core/pc_reg.v`、`src/memory/data_ram.v`、`src/memory/inst_ram.v`、`src/soc/soc_top.v`、`src/board/minisys_top.v`
+  - 新增 RTL：`src/core/riscv_sc_wrapper.v`（P1 占位模块）
+  - 测试：`sim/tb/tb_cpu_basic.v`
+  - 文档：`docs/planning/compliance_check_report.md`、`docs/ai_logs/ai_usage_log.md`
+  - 远端合并：`.gitignore`、`README.md`、`constraints/minisys.xdc`、`docs/ai_logs/ai_usage_log.md`
+- 提示词摘要：要求 Codex 预判 Vivado 综合可能失败的代码问题并主动修复；审核 C 组员的完整工作报告，区分真正的 RTL bug 与环境/工具链问题；逐文件检查全部 RTL 的 wire/reg 声明一致性、include 路径和 Verilog-2001 语法兼容性；合并队友的远端提交并与本地修复对比。
+- AI 输出摘要：
+  - 预判发现 `soc_top.v:15` 使用裸文件名 `include "public.vh"` 而非相对路径，在 Vivado 中会找不到 include 文件
+  - 预判发现 `cpu_top.v:71` 引用的 `riscv_sc_wrapper` 模块文件完全缺失，Vivado elaboration 阶段会报 `module not found`
+  - 预判发现 `minisys_top.v:37` 使用 `ifdef MINISYS_USE_SOC_TOP`，C 未定义宏时综合结果仅为心跳灯计数器而非完整 SoC
+  - 对上述三个问题进行修复：include 改相对路径、创建占位模块、反转 ifdef 条件使 SoC 模式成为默认
+  - 审核 C 报告后确认 `pc_reg.v:26` 的 `output wire ce` 在 `always` 块中被 `<=` 赋值是真正的 Verilog 语法错误（所有工具均会报错），而 `$clog2` 仅在 Vivado 2017.4 中不支持（2018.3 原生支持）
+  - 采纳 C 的 `$clog2`→`clog2` 函数替换方案（兼容 2017.4 + 2018.3）
+  - 分析 C 的 `TclStackFree` 崩溃隔离测试（1 行 assign 也崩），确认为 Win11 + Vivado 2017.4 batch 模式 IPC 兼容性 bug
+  - 全面扫描确认：仅 `pc_reg.v` 一处 wire/reg 声明错误，其余 24 个文件声明正确；include 路径全部正确；零处 SV-only 语法
+  - 与 Evelyn 远端提交对比：双方修改无文件重叠，RTL 修复 + 约束配置修复完全互补
+- 人工审阅点：
+  - 人工确认 `pc_reg.v` 的 `output wire ce` 确实在 `always` 块内被 `<=` 赋值，属于阻断级 Verilog 语法错误
+  - 人工确认 `$clog2` 在 Vivado 2018.3 中原生支持、在 2017.4 中不支持，采纳 C 的函数方案属于增强兼容性而非冗余修改
+  - 人工确认 `riscv_sc_wrapper.v` 占位的接口签名与 `cpu_top.v` 中实例化端口完全一致
+  - 人工确认 `minisys_top.v` ifdef 反转后，默认行为从"心跳灯"变为"SoC 模式"，C 不再需要在 Vivado 中设置任何宏
+  - 人工确认 Evelyn 的 `constraints/minisys.xdc` 新增的 `CFGBVS VCCO` + `CONFIG_VOLTAGE 3.3` 为 XC7A100T 综合必需配置
+- 人工修改内容：
+  - 无额外修改——以上修复经人工确认后全部保留
+- 验证方式：
+  - grep 扫描全部 `src/**/*.v` 的 `output wire` 声明 + `always` 块内的 `<=` 赋值
+  - grep 扫描全部 include 语句的路径正确性
+  - grep 扫描 SV-only 关键字（`always_comb`/`logic`/`enum`/`interface`）确认全部未使用
+  - `git diff --stat` 确认远端与本地修改无文件重叠
+  - C 的报告确认 xsim 仿真全部通过，`LE7/TNS/THS` 全部满足 100MHz 约束
+- 验证结果：
+  - RTL 语法兼容性：1 处阻断性 bug 已修复（`pc_reg.v`），其余 24 个文件无问题
+  - Vivado 2017.4 兼容：`$clog2` 已替换为可综合函数，其余语法完全兼容
+  - Vivado 2018.3 兼容：全部兼容，无任何不适配语法
+  - 综合前置条件：include 路径、缺失模块、ifdef 默认值、约束配置电压全部修复
+  - 与远端合并：零冲突
+- 是否合并：待提交
+- 备注：
+  - 本记录覆盖 A 在 2026-07-09 对 C 组工作的审核诊断、3 个预判综合阻断问题的修复、7 处 RTL 修复（含 C 发现的 3 处 + 预判的 3 处 + 1 处路径修复）、全面语法兼容性扫描，以及与 Evelyn 远端提交的无冲突合并
+  - C 的综合卡点根因已明确：Vivado 2017.4 batch 模式在 Win11 上的 IPC 崩溃，与 RTL 设计质量无关——C 的隔离测试证明了这一点。建议 C 优先尝试 Vivado GUI 模式或 Windows 7 兼容模式运行综合

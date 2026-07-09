@@ -23,7 +23,7 @@ module pc_reg (
     input  wire [31:0] jump_reg_target,    // JALR target (rs1 + imm)
 
     output reg  [31:0] pc,
-    output wire        ce                  // Instruction memory enable
+    output reg         ce                  // Instruction memory enable
 );
 
     // ce is deasserted during reset, asserted otherwise

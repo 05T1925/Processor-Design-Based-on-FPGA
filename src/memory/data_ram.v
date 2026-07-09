@@ -21,7 +21,18 @@ module data_ram #(
 );
 
     localparam RAM_DEPTH = RAM_SIZE / 4;
-    localparam ADDR_WIDTH = $clog2(RAM_DEPTH);
+
+    // Vivado 2017.4 / 2018.3 compatible $clog2 replacement
+    function integer clog2;
+        input integer v;
+        integer t;
+        begin
+            t = v - 1;
+            for (clog2 = 0; t > 0; clog2 = clog2 + 1)
+                t = t >> 1;
+        end
+    endfunction
+    localparam ADDR_WIDTH = clog2(RAM_DEPTH);
 
     reg [31:0] mem [0:RAM_DEPTH-1];
 

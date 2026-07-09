@@ -12,7 +12,7 @@
 //   4 = MIPS 5-stage pipeline advanced
 //==============================================================================
 
-`include "public.vh"
+`include "../core/public.vh"
 
 module soc_top #(
     parameter CPU_MODE         = 0,

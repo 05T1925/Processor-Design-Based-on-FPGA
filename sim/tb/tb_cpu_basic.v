@@ -45,9 +45,10 @@ module tb_cpu_basic;
             uut.data_ram_inst.mem[i] = 32'h00000000;
         end
 
-        // Load test program
+        // Load test program (path relative to project root)
+        // Adjust if simulator working directory differs
         $readmemh(
-            "C:/Users/rolle/Processor-Design-Based-on-FPGA/sim/programs/basic_test.hex",
+            "../sim/programs/basic_test.hex",
             uut.inst_ram_inst.mem
         );
 
