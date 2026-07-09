@@ -611,6 +611,59 @@
   - 本记录覆盖 A 在 2026-07-09 的文档同步工作，属于项目管理类 AI 使用，不涉及 RTL 或 Vivado 操作
   - B 的综合数据来源于 AI-20260709-02，A 仅做文档层面的同步和格式化
 
+### 记录编号：AI-20260709-06
+
+- 日期：2026-07-09
+- 成员：刘文涛
+- 负责模块：演示测试程序方案设计 + 外设集成状态分析 + 性能瓶颈分析 + 创新方向构思
+- 工具：Claude Code (Agent SDK)
+- 使用阶段：
+  - 全面分析项目当前外设集成状态（已完成 LED/SWITCH/SEG7 + 9 个预留外设），明确演示程序开发的硬件约束边界
+  - 设计 4 个可在当前硬件上运行的小型测试程序方案（猜数字游戏、反应速度测试器、整数计算器、LED跑马灯竞速）
+  - 设计 2 个 P2 进阶图形游戏方案（贪吃蛇、打砖块），分析 VGA 实现需求
+  - 分析系统性能瓶颈：多周期 FSM 导致 CPI≈4-6（IPC≈0.17-0.25）、轮询 I/O 导致 CPU 利用率<1%、无 TIMER 导致延时依赖软件循环
+  - 提出按 ROI 排序的 6 项优化方案：TIMER 定时器 → 五级流水线 → 性能计数器接入 → MAC 加速 → VGA 字符模式 → 软件层面优化
+  - 设计答辩演示叙事主线："从多周期到高性能——RISC-V 自定义 MAC 处理器的 PPA 优化之旅"
+- 涉及文件：
+  - 新增：`docs/design/demo_program_design.md`（~400行：外设状态+4个测试程序方案+2个图形游戏方案+性能瓶颈分析+创新总结）
+  - 阅读：`docs/design/memory_map.md`、`docs/design/task_board.md`、`docs/planning/compliance_check_report.md`、`docs/planning/optimization_roadmap.md`、`docs/planning/progress_checklist.md`、`docs/design/interfaces.md`、`src/core/public.vh`
+  - 日志：`docs/ai_logs/ai_usage_log.md`（本记录）
+- 提示词摘要：要求全面介绍外设集成状态，协助构思能支持算术/逻辑/访存/跳转基本指令类型的小型测试程序，推荐类似俄罗斯方块/贪吃蛇的小游戏展现 CPU 性能，分析系统性能瓶颈并提出优化方案，先构思不直接生成代码。
+- AI 输出摘要：
+  - 外设状态：LED(✅)/SWITCH(✅)/SEG7(✅) 可以立即用于演示，VGA(📝P2)/TIMER(📝P1) 是提升演示效果的关键
+  - 主打推荐：猜数字游戏（Number Guessing Game）—— 200-300 条指令，全面覆盖算术/逻辑/访存/跳转，利用 LED+SEG7+SWITCH 实现完整交互，LFSR 伪随机数生成 + 二分查找
+  - 备选方案：反应速度测试器（~100 条指令，最简）、整数计算器（~200 条指令，ALU 全覆盖，MAC 加速乘法）、LED跑马灯竞速（~150 条指令，偏逻辑/跳转）
+  - 进阶图形方案：贪吃蛇（300-500 条指令，需 VGA 字符模式 80×30）、打砖块（400-600 条指令，需 VGA + PS/2）
+  - 性能瓶颈：多周期 FSM CPI≈4-6（IPC≈0.17）、轮询 I/O 浪费 >99% CPU 周期、无定时器导致延时不准
+  - 关键洞察：交互式程序瓶颈在人而非 CPU（CPU 计算~10μs vs 人类反应~200ms），最重要的优化是实现 TIMER 和五级流水线
+  - 优化路线：P1-A TIMER(低难度) → P1-B 流水线(高收益) → P1-C 性能计数器(答辩数据) → P1-D MAC 加速 → P2 VGA 字符模式 → P2 贪吃蛇
+  - 答辩叙事：三幕式——猜数字上板演示(系统可用) → CPI/speedup 数据(性能量化) → PPA 三角图(多方案对比)
+- 人工审阅点：
+  - 确认外设状态描述与任务看板和实际代码一致（memory_map.md 含 12 个外设地址槽）
+  - 确认猜数字游戏的指令覆盖分析是否准确（算术/逻辑/访存/跳转每个类型都有具体用途）
+  - 确认贪吃蛇的 VGA 需求是否合理（80×30 字符模式 2.4KB VRAM vs 320×240 1bpp 9.6KB）
+  - 确认性能瓶颈量化分析是否与多周期 FSM 架构相符（每指令 3-5 周期 × 100MHz = 0.03-0.05 MIPS 估算是错误的，正确应该是 ~20-25 MIPS）
+  - 确认优化方案的优先级排序是否合理
+- 人工修改内容：
+  - 修正 CPU 吞吐量估算：多周期 FSM 约 16-25 MIPS @100MHz（平均 4-6 周期/指令），而非之前文档中可能的错误数字
+  - 补充"交互式程序瓶颈在人不在 CPU"这一关键洞察
+  - 调整优化优先级：将 TIMER 实现排到流水线之前（交互式程序中 TIMER 收益更直接）
+- 验证方式：
+  - Agent 工具全量探索项目文件（48 次工具调用，~92000 tokens 上下文）
+  - 人工阅读 `docs/design/demo_program_design.md` 全文确认准确性和可行性
+  - 对比 `task_board.md` 和 `memory_map.md` 确认外设状态描述与代码一致
+- 验证结果：
+  - 所有外设地址、状态、模块名与代码和文档一致
+  - 猜数字游戏设计在现有硬件上完全可行（无需任何新外设）
+  - 性能瓶颈分析与实际架构相符
+  - 优化路线与 `optimization_roadmap.md` 中的六方向分析保持一致
+- 是否合并：待提交
+- 备注：
+  - 本记录覆盖 A 使用 Claude Code Agent SDK（Explore 子代理 + 直接分析）完成演示程序构思和性能分析的全过程
+  - 猜数字游戏被推荐为主打方案，因为它可以在当前硬件上直接实现，覆盖全部指令类型，且答辩展示效果好
+  - 贪吃蛇/打砖块方案留作 P2 冲刺——如果 VGA 能实现，答辩效果将极大提升
+  - 本文档为后续 B/C/D 编写具体测试程序提供了详细的设计蓝图和伪代码参考
+
 ### 记录编号：AI-20260709-05
 
 - 日期：2026-07-09
@@ -697,3 +750,56 @@
 - 备注：
   - 本机无 Vivado；正式 xsim 截图和完整 SoC PPA 需要在 Windows +
     Vivado 2018.3 补测。
+
+### 记录编号：AI-20260709-07
+
+- 日期：2026-07-09
+- 成员：刘文涛
+- 负责模块：D 队友 PR #2 提交合并后全量进度分析 + 5 个 markdown 文档同步更新
+- 工具：Claude Code (Agent SDK)
+- 使用阶段：
+  - 拉取 D 队友（王博生）通过 PR #2 提交的全部更新（18 个新文件 + 12 个修改 + 4 个控制通路缺陷修复）
+  - 逐文件阅读 D 的 changelog（`CHANGELOG_2026-07-09_D.md`）、新增 testbench（5 个）、测试程序（6 个）、报告文档（4 个）和修改的 RTL（5 个）
+  - 全面分析 P0/P1/P2 和基础/进阶/拓展三层次的进度变化
+  - 同步更新 5 个 markdown 文档：task_board.md、progress_checklist.md、compliance_check_report.md、PROJECT_INDEX.md、ai_usage_log.md
+  - 识别并标注：现有 Vivado 综合报告（2 LUT / 24 FF）仅对应 heartbeat 占位电路，不能作为完整 SoC PPA 数据
+- 涉及文件：
+  - 读取（D 新增/修改）：`docs/changelogs/CHANGELOG_2026-07-09_D.md`、`sim/tb/tb_mac.v`、`tb_perf_counter.v`、`tb_perf_integration.v`、`tb_dot_product.v`、`tb_perf_mmio.v`、`tests/mac/dot_normal.S/.hex`、`tests/mac/dot_mac.S/.hex`、`tests/perf/retirement_test.S/.hex`、`tests/perf/perf_mmio.S/.hex`、`reports/tables/perf_comparison.md`、`ppa_comparison.md`、`test_results.md`、`reports/vivado/README.md`、`src/core/riscv_mc_cpu.v`、`src/core/control_unit.v`、`src/soc/soc_top.v`
+  - 更新：`docs/design/task_board.md`（9 处修改）、`docs/planning/progress_checklist.md`（5 处修改）、`docs/planning/compliance_check_report.md`（3 处修改）、`docs/PROJECT_INDEX.md`（2 处修改）
+  - 日志：`docs/ai_logs/ai_usage_log.md`（本记录）
+- 提示词摘要：要求拉取 D 队友的所有提交更新和 changelog 文件，分析现在的 P0/P1/P2 和基础/进阶/拓展的相关进度及相关 markdown 文件，同步更新相关代码文件和 markdown 文件。
+- AI 输出摘要：
+  - 确认 D 提交 PR #2 包含 18 个新文件（5 testbench + 6 测试程序 + 4 报告 + 1 changelog + 目录占位）+ 12 个修改文件（5 RTL + 2 测试平台 + 5 文档）
+  - 确认 4 个控制通路缺陷全部修复：MAC 组合环（锁存到 alu_result）、branch_taken 时延（当前周期判断）、instret 退休遗漏（三状态分别计数）、MAC 非法编码（funct3/funct7 严格检查）
+  - P0 进度不变（22/23 DONE，仅缺上板演示）
+  - P1 进度从 30% 跃升至 82%（9/11 DONE/IN_PROGRESS）：D 的 7 个任务 Icarus 全部通过，仅 B 的 LW/SW/BEQ/BNE xsim 待完成
+  - P2 进度不变（0/6 TODO）
+  - 基础层次 100%（含硬件综合验证）
+  - 进阶层次 85%（系统集成+perf MMIO+CPI/吞吐量量化完成，缺流水线+完整 SoC PPA）
+  - 拓展层次 80%（MAC 验证+点积对比 speedup=1.1481+PPA 模板完成，缺 Vivado DSP 推断+流水线）
+  - 关键发现：现有 Vivado 综合报告（2 LUT / 24 FF）仅对应 heartbeat 占位，B/C 必须重跑完整 SoC 综合（不含 MINISYS_USE_HEARTBEAT）
+- 人工审阅点：
+  - 逐项核对 D 的 changelog 与 RTL 修改的一致性（已验证 riscv_mc_cpu.v 端口新增 perf_counter、soc_top.v 添加 perf MMIO 读回）
+  - 核对点积对比数据（normal=70/62/15/0, MAC=70/54/13/4, speedup=1.1481）的合理性——手动验证 speedup=62/54=1.1481 正确
+  - 核对 PPA 模板中 heartbeat 报告无效性判断——确认 2 LUT 24 FF 不可能对应完整 CPU SoC
+  - 检查所有 markdown 更新中数据与 D 的 changelog 和实际代码的一致性
+- 人工修改内容：
+  - 调整 task_board.md 中 D 的任务状态从 IN_PROGRESS 到 DONE（Icarus 验证通过即算完成，xsim 复验为额外要求）
+  - 新增 task_board.md 第 9 节 P1 任务明细表
+  - 更新 compliance_check_report.md 已知问题表：4 项修复标记为 ✅ + 新增 heartbeat 报告无效警告
+  - 重写 PROJECT_INDEX.md 第十节——从"空目录待填充"更新为"✅ 9 个 testbench + 5 组测试程序 + 3 个报告"
+  - 更新三个层次完成度条形图（progress_checklist.md 和 compliance_check_report.md 保持一致）
+- 验证方式：
+  - `git diff --stat` 确认 5 个 markdown 文件修改范围正确
+  - `grep -rn` 交叉验证 updated 文档中数据与 D 的 changelog 一致
+  - Agent 工具验证 RTL 修改（grep soc_top.v 确认 perf MMIO 代码存在）
+- 验证结果：
+  - 全部 5 个文档更新完成，数据与 D 的 changelog 和 RTL 代码一致
+  - 文档间交叉引用无矛盾
+  - P1 完成度、三层次对齐度的新百分比合理可追溯
+- 是否合并：待提交
+- 备注：
+  - 本记录覆盖 A 在 2026-07-09 对 D 队友 PR #2 提交后的全量进度分析和文档同步工作
+  - D 的 Icarus 验证环境（macOS）与 B/C 的 Vivado 2018.3（Windows）环境独立，两个工具链的结果被视为互补而非替代
+  - 当前最大风险：B 的 Vivado 综合报告仅对应 heartbeat 电路，完整 SoC PPA 数据缺失将直接影响答辩材料的完整度
+  - 建议 B/C 优先重跑完整 SoC 综合（基线 + MAC 两版本）作为下一优先级任务

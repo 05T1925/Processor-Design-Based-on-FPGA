@@ -2,7 +2,7 @@
 
 用途：拆分合并后的开发任务，定义优先级、负责人、路径、依赖、完成标准和当前状态。
 
-最后更新时间：2026-07-09（组长A更新：反映 B 完成综合/实现/bitstream + A 完成 RTL 修复后的真实进度）
+最后更新时间：2026-07-09（组长A更新：整合 D 提交 PR #2 MAC/Perf 验证后进度 — 18 个新文件 + 12 个修改 + 4 个控制通路缺陷修复）
 
 ## 1. 优先级定义
 
@@ -50,15 +50,15 @@ DONE          →  已完成
 
 | 优先级 | 任务 | 负责人 | 路径 | 依赖 | 完成标准 | 状态 |
 |---|---|---|---|---|---|---|
-| P1 | mac_unit 单元测试 | D | `sim/tb/tb_mac.v` | mac_unit代码 | Icarus通过；Vivado xsim截图待补 | **IN_PROGRESS** |
-| P1 | perf_counter 单元测试 | D | `sim/tb/tb_perf_counter.v` | csr_perf_counter代码 | Icarus通过；Vivado xsim截图待补 | **IN_PROGRESS** |
-| P1 | 普通点积测试程序 | D | `tests/mac/` | CPU仿真通过 | result=70，cycle=62，instret=15 | **IN_PROGRESS** |
-| P1 | MAC 点积测试程序 | D | `tests/mac/` | CPU仿真通过+MAC | result=70，cycle=54，instret=13，mac=4 | **IN_PROGRESS** |
-| P1 | 点积对比：result+cycle+CPI | D | `reports/tables/` | 点积测试完成 | 表格已生成；xsim正式数据待补 | **IN_PROGRESS** |
-| P1 | Vivado utilization/timing 导出 | B/C | `reports/vivado/` | bitstream生成 | 有截图或报告 | **IN_PROGRESS** |
-| P1 | PPA 表格初稿 | D | `reports/tables/` | 完整SoC Vivado数据 | 模板完成；现有heartbeat报告无效，待重跑 | **IN_PROGRESS** |
+| P1 | mac_unit 单元测试 | D | `sim/tb/tb_mac.v` | mac_unit代码 | ✅ Icarus 通过（7类测试）；Vivado xsim 截图待补 | **DONE** |
+| P1 | perf_counter 单元测试 | D | `sim/tb/tb_perf_counter.v` | csr_perf_counter代码 | ✅ Icarus 通过（7类测试）；Vivado xsim 截图待补 | **DONE** |
+| P1 | 普通点积测试程序 | D | `tests/mac/` | CPU仿真通过 | ✅ result=70，cycle=62，instret=15（Icarus） | **DONE** |
+| P1 | MAC 点积测试程序 | D | `tests/mac/` | CPU仿真通过+MAC | ✅ result=70，cycle=54，instret=13，mac=4（Icarus） | **DONE** |
+| P1 | 点积对比：result+cycle+CPI | D | `reports/tables/` | 点积测试完成 | ✅ 对比表完成（speedup=1.1481）；xsim 正式数据待补 | **DONE** |
+| P1 | Vivado utilization/timing 导出 | B/C | `reports/vivado/` | 完整SoC重新综合 | 🔴 现有 heartbeat 报告无效（2 LUT / 24 FF），需重跑完整 SoC | **IN_PROGRESS** |
+| P1 | PPA 表格初稿 | D | `reports/tables/` | 完整SoC Vivado数据 | ✅ 模板+字段定义+验收条件完成；真实数据待完整 SoC 综合 | **DONE** |
 | P1 | RV32I单周期wrapper接入 | A | `src/core/riscv_sc_wrapper.v` | 参考riscv-minisys-cpu | 占位已创建，P1填入真实逻辑 | **IN_PROGRESS** |
-| P1 | 性能计数器MMIO暴露 | D | `src/soc/soc_top.v`修改 | perf_counter验证通过 | Icarus读回cycle/instret/mac通过，xsim待补 | **IN_PROGRESS** |
+| P1 | 性能计数器MMIO暴露 | D | `src/soc/soc_top.v`修改 | perf_counter验证通过 | ✅ Icarus 读回 cycle/instret/mac 通过（perf_mmio测试）；xsim 待补 | **DONE** |
 | P1 | LW/SW xsim 仿真 | B | `sim/tb/`、`tests/load_store/` | CPU basic通过 | 访存指令正确 | TODO |
 | P1 | BEQ/BNE xsim 仿真 | B | `sim/tb/`、`tests/branch/` | CPU basic通过 | 6种分支条件正确 | TODO |
 
@@ -77,10 +77,10 @@ DONE          →  已完成
 
 | 成员 | 已完成 | 当前任务 | 下一任务 |
 |---|---|---|---|
-| A 刘文涛 | ✅ 6仓库分析选型 + 24 RTL生成 + 文档同步 + 合规检查报告 + 7处RTL修复（pc_reg/$clog2/include路径/riscv_sc_wrapper/ifdef） | 文档同步更新、AI日志维护 | RV32I单周期wrapper实现、集成测试复核 |
-| B 张淇 | ✅ 4个testbench（ALU/regfile/control/CPU basic）全部xsim通过 + Vivado工程搭建 + Synthesis/Implementation/Bitstream全部通过（WNS=7.212ns, TNS=0, DRC=0）+ 约束电压配置修复 | Vivado utilization/timing数据导出 | LW/SW/branch仿真、CPU周期记录 |
+| A 刘文涛 | ✅ 6仓库分析选型 + 24 RTL生成 + 文档同步 + 合规检查报告 + 7处RTL修复 + 演示程序设计方案 | 文档同步更新、AI日志维护、D贡献合并后进度分析 | RV32I单周期wrapper实现、集成测试复核 |
+| B 张淇 | ✅ 4个testbench（ALU/regfile/control/CPU basic）全部xsim通过 + Vivado工程搭建 + Synthesis/Implementation/Bitstream全部通过（WNS=7.212ns, TNS=0, DRC=0）+ 约束电压配置修复 | 🔴 完整SoC重新综合（现有报告仅heartbeat，无效）+ utilization/timing数据导出 | LW/SW/branch仿真、CPU周期记录 |
 | C 胡文龙 | ✅ xsim全系统仿真验证通过 + 3处RTL bug诊断（pc_reg/$clog2/路径）+ Vivado 2017.4兼容性深度诊断 | 🔴 上板LED/数码管验证 | 上板演示录像/照片、UART（P2） |
-| D 王博生 | ✅ MAC/perf单测、两版点积、计数器MMIO的Icarus验证 | 🔴 补Vivado xsim截图与完整SoC PPA | 配合B/C重跑完整SoC综合 |
+| D 王博生 | ✅ 6个testbench（MAC/perf/集成/点积对比/MMIO）Icarus全部通过 + 6个测试程序 + 4个报告文档 + 4个控制通路缺陷修复 + perf MMIO暴露 | 🔴 补Vivado xsim截图 | 配合B/C重跑完整SoC综合 |
 
 ## 6. Git 提交节点（已完成 → 待完成）
 
@@ -94,9 +94,11 @@ DONE          →  已完成
 ✅ sim: add cpu basic program simulation
 ✅ fix: resolve Vivado synthesis blockers and RTL compatibility issues
 ✅ chore: update Vivado constraints and repo hygiene
-⏳ rtl: add vivado project and synthesis results → B已产出数据，待C导出截图
-⏳ test: add dot product comparison → D待执行
-⏳ report: add vivado performance data → D待执行
+✅ feat: member D MAC/perf validation + control path fixes (PR #2) ← 2026-07-09 D 提交
+⏳ test: complete SoC re-synthesis with utilization/timing reports → B/C 需重跑完整 SoC
+⏳ board: on-board LED/SEG7 demo → C 待执行
+⏳ sim: LW/SW/branch extended testbenches → B 待执行
+⏳ rtl: five-stage pipeline prototyping → D 待启动
 ```
 
 ## 7. 当前阻塞项与风险
@@ -106,10 +108,12 @@ DONE          →  已完成
 | ~~Vivado 2018.3 环境未确认~~ | ~~C无法建工程~~ | ~~C~~ | ✅ 已解决 | B已用Vivado 2018.3完成综合/实现/bitstream |
 | ~~xsim 仿真未跑通~~ | ~~B无法验证CPU~~ | ~~B~~ | ✅ 已解决 | 4个testbench全部xsim通过 |
 | ~~RTL语法错误阻断综合~~ | ~~综合失败~~ | ~~A~~ | ✅ 已解决 | pc_reg.v wire→reg修复；$clog2兼容双版本 |
+| ~~D的MAC/性能工作未启动~~ | ~~P1亮点缺失~~ | ~~D~~ | ✅ 已解决 | D 提交 PR #2：6 个 testbench + 点积对比 + perf MMIO + 4 个控制通路缺陷修复 |
 | Vivado 2017.4 Win11综合崩溃 | C的综合卡住 | C | 🔴 待解决 | 方案A: GUI模式 / 方案C: Win7兼容模式 / 换2018.3 |
+| 现有 Vivado 综合报告仅 heartbeat（2 LUT / 24 FF）| PPA 数据缺失 | B/C | 🔴 严重 | 需重跑完整 SoC 综合（不含 MINISYS_USE_HEARTBEAT），两版本（基线/MAC） |
 | 复位按钮极性待实测 | 上板可能异常 | C | 🟡 | Vivado最小工程实测P20 |
-| D的MAC/性能工作未启动 | P1亮点缺失 | D | 🔴 | D需要尽快开始tb_mac和tb_perf_counter |
-| LW/SW/Branch测试未覆盖 | 指令验证不完整 | B | 🟡 | basic_test.hex已覆盖LW/SW/BEQ，需扩展 |
+| LW/SW/Branch测试未覆盖 | 指令验证不完整 | B | 🟡 | basic_test.hex已覆盖LW/SW/BEQ；D的点积程序已大量使用访存 |
+| 上板 LED/数码管 演示 | P0 唯一缺口 | C | 🔴 | bitstream 已生成，需上板 |
 
 ## 8. Vivado 综合/实现验证结果（2026-07-09，B执行）
 
@@ -129,11 +133,19 @@ DONE          →  已完成
 ## 9. 项目整体完成度
 
 ```text
-P0 保底任务   ███████████████ 96%  (22/23 DONE，仅缺上板演示)
-P1 进阶任务   ████░░░░░░░░░░░ 30%  (3/10 IN_PROGRESS，7 TODO)
-P2 冲刺任务   ░░░░░░░░░░░░░░░  0%  (0/6 DONE)
+P0 保底任务   ████████████████ 96%   (22/23 DONE，仅缺上板演示)
+P1 进阶任务   █████████████░░░ 82%   (9/11 DONE/IN_PROGRESS，仅缺 LW/SW/BEQ/BNE xsim + SoC综合)
+P2 冲刺任务   ░░░░░░░░░░░░░░░░  0%   (0/6 DONE)
 
-课程基础层次  ███████████████ 100% (含硬件综合验证)
-课程进阶层次  ████████░░░░░░░  60% (SoC框架+综合通过，缺性能数据)
-课程拓展层次  ████████░░░░░░░  65% (MAC+PPA框架完成，缺点积对比数据)
+课程基础层次  █████████████████ 100%  (RTL + 仿真 + 综合 + 实现 + bitstream 全部完成)
+课程进阶层次  ██████████████░░░  85%  (点积对比完成 + perf MMIO 完成 + MAC 验证完成，缺完整 SoC PPA + 流水线)
+课程拓展层次  ██████████████░░░  80%  (MAC 100% 独立设计 + PPA 模板 + 点积性能数据，缺 Vivado DSP 推断确认 + 流水线)
 ```
+
+### P1 任务明细（D 本次提交后）
+
+| 状态 | 数量 | 任务 |
+|---|---|---|
+| **DONE** | 7 | mac_unit单测、perf_counter单测、普通点积、MAC点积、点积对比表、PPA模板、perf MMIO暴露 |
+| **IN_PROGRESS** | 2 | Vivado util/timing导出（B/C重跑完整SoC）、RV32I单周期wrapper（A） |
+| **TODO** | 2 | LW/SW xsim（B）、BEQ/BNE xsim（B） |

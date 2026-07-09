@@ -1,7 +1,7 @@
 # 项目文件清单与内容索引
 
 > 用途：给 B/C/D 队友及其 AI agent 提供项目全貌，方便快速定位文件、理解内容和避免越界修改。
-> 最后更新：2026-07-07
+> 最后更新：2026-07-09（整合 D PR #2 后更新测试/报告目录状态）
 
 ---
 
@@ -307,23 +307,24 @@ EES-329B 扩展板功能测试说明 PDF。只作为扩展板/上板流程参考
 
 ## 十、`sim/` `tests/` `reports/` `scripts/` — 仿真/测试/报告/脚本
 
-所有目录已初始化（含 `.gitkeep`），当前为空，等待 RTL 实现后填充。
+D 已提交 PR #2（2026-07-09），填充了大部分目录。B 的 testbench 在更早提交中已完成。
 
-| 目录 | 负责人 | 用途 |
-|---|---|---|
-| `sim/tb/` | B/D | testbench（tb_alu, tb_regfile, tb_cpu_basic, tb_mac, tb_perf_counter） |
-| `sim/programs/` | B/D | 汇编/机器码/`.mem` 初始化文件 |
-| `tests/basic/` | B | 基础指令测试 |
-| `tests/load_store/` | B | LW/SW 测试 |
-| `tests/branch/` | B | BEQ/BNE 测试 |
-| `tests/mac/` | D | MAC 点积测试 |
-| `tests/perf/` | D | 性能计数器测试 |
-| `tests/mmio/` | C | MMIO 测试 |
-| `tests/hazard/` | D(P2) | 流水线冒险测试 |
-| `reports/vivado/` | C | utilization/timing 截图 |
-| `reports/tables/` | D | PPA 表格 |
-| `reports/figures/` | 全员 | 架构图/波形图/上板照片 |
-| `scripts/` | C | Vivado/xsim 辅助脚本 |
+| 目录 | 负责人 | 已提交文件 | 状态 |
+|---|---|---|---|
+| `sim/tb/` | B/D | `tb_alu.v`, `tb_regfile.v`, `tb_control_unit.v`, `tb_cpu_basic.v`（B xsim通过）+ `tb_mac.v`, `tb_perf_counter.v`, `tb_perf_integration.v`, `tb_dot_product.v`, `tb_perf_mmio.v`（D Icarus通过） | ✅ 9 个 testbench |
+| `sim/programs/` | B/D | `basic_test.hex` | ✅ 1 个 |
+| `tests/mac/` | D | `dot_normal.S/.hex`, `dot_mac.S/.hex` | ✅ 2 组点积 |
+| `tests/perf/` | D | `retirement_test.S/.hex`, `perf_mmio.S/.hex` | ✅ 2 组性能 |
+| `tests/basic/` | B | `basic_test.S` | 🔄 待扩展 |
+| `tests/load_store/` | B | — | TODO |
+| `tests/branch/` | B | — | TODO |
+| `tests/mmio/` | C | — | TODO |
+| `tests/hazard/` | D(P2) | — | TODO |
+| `reports/tables/` | D | `perf_comparison.md`, `ppa_comparison.md`, `test_results.md` | ✅ 3 个报告 |
+| `reports/vivado/` | B/C | `README.md`（归档要求） | 🔄 待填实际数据 |
+| `reports/figures/` | 全员 | — | TODO |
+| `scripts/` | C | — | TODO |
+| `docs/changelogs/` | D | `CHANGELOG_2026-07-09_D.md`（173行完整changelog） | ✅ |
 
 ---
 

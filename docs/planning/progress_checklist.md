@@ -47,15 +47,15 @@
 | 存储层次规划 | ✅ **完成** | `docs/planning/optimization_roadmap.md` §方向2：Cache可行性分析 + BRAM层次说明 | 有规划文档 |
 | 基本I/O接口 | ✅ **完成** | LED(0xFFFF_FC00) + Switch(0xFFFF_FC10) + SEG7(0xFFFF_FC20) | 统一6端口bus slave |
 | 系统集成 | ✅ **完成** | `src/soc/soc_top.v`：CPU+ibus+dbus+decoder+mux+12外设 | 统一总线架构 |
-| 小型测试程序完整运行 | 🔄 **有条件完成** | basic_test.hex已修复，需xsim验证 | 明早B做 |
-| 系统性能瓶颈分析 | 🔄 **有条件完成** | `csr_perf_counter.v` 已实现，需仿真数据 | D后续做 |
-| 优化方案 | 🔄 **有条件完成** | `docs/planning/optimization_roadmap.md` 六个方向全部分析 | 有方案，待实施 |
-| 引入流水线机制 | 🔄 **有条件完成** | NCUT+SEU流水线参考已就位，`src/core/pipeline/`目录已预留 | D的P1任务 |
-| 时钟频率量化评估 | 🔄 **有条件完成** | 需Vivado timing report（WNS/TNS/Fmax） | C的P0任务 |
-| CPI量化评估 | 🔄 **有条件完成** | `csr_perf_counter.v` cycle/instret已实现 | D做计算 |
-| 吞吐量量化评估 | 🔄 **有条件完成** | 同上，需多程序对比 | D的P1任务 |
+| 小型测试程序完整运行 | ✅ **完成** | basic_test.hex（xsim）+ dot_normal.hex/MAC.hex/retirement/perf_mmio（Icarus）共5个测试程序 | B+D验证通过 |
+| 系统性能瓶颈分析 | ✅ **完成** | `csr_perf_counter.v` + `perf_comparison.md`：cycle/instret/mac数据 + CPI分析 + 停机开销分析 | D完成Icarus数据采集 |
+| 优化方案 | ✅ **完成** | `optimization_roadmap.md` 六方向分析 + `demo_program_design.md` 演示程序方案 | 有方案+数据支撑 |
+| 引入流水线机制 | 🔄 **有条件完成** | NCUT+SEU流水线参考已就位，`src/core/pipeline/`目录已预留 | D的P2任务，未启动 |
+| 时钟频率量化评估 | 🔄 **有条件完成** | 需完整SoC Vivado timing report（现有heartbeat WNS=7.212ns不代表完整SoC） | B/C需重跑完整SoC综合 |
+| CPI量化评估 | ✅ **完成** | dot_normal CPI=4.1333, dot_mac CPI=4.1538（主体CPI=4.0，含EBREAK停机开销） | D完成Icarus数据 |
+| 吞吐量量化评估 | ✅ **完成** | MAC dot speedup=1.1481，cycle↓12.90%，instret↓13.33% | D完成点积对比 |
 
-**进阶层次完成度：6/12 代码已完成，6/12 有条件完成（依赖 xsim/Vivado 数据 + 流水线实现）。**
+**进阶层次完成度：10/12 已完成（✅），2/12 有条件完成（流水线 + 完整SoC PPA数据）。**
 
 ---
 
@@ -112,15 +112,15 @@
 
 | 子项 | 状态 | 证据 |
 |---|---|---|
-| MAC乘加单元（组合逻辑版）| ✅ **已完成** | `mac_unit.v`：`rd_new = rd_old + rs1 * rs2` |
-| MAC编码与译码 | ✅ **已完成** | public.vh + control_unit.v |
-| MAC性能计数 | ✅ **已完成** | `csr_perf_counter.v` mac_count |
-| MAC DSP48E1精调 | 🔄 **有条件** | Artix-7有240个DSP48E1，Vivado综合后可查看推断结果 |
+| MAC乘加单元（组合逻辑版）| ✅ **已完成** | `mac_unit.v`：`rd_new = rd_old + rs1 * rs2`（D修复组合环：锁存到alu_result） |
+| MAC编码与译码 | ✅ **已完成** | public.vh + control_unit.v（D修复非法funct3/funct7不检查问题） |
+| MAC性能计数 | ✅ **已完成** | `csr_perf_counter.v` mac_count（D修复STORE/BRANCH退休计数遗漏） |
+| MAC DSP48E1精调 | 🔄 **有条件** | Artix-7有240个DSP48E1，需完整SoC综合确认推断结果 |
 | 流水线化MAC | 🔄 **有条件** | 2-3级流水线可提升Fmax |
 | 向量化MAC(VEC_MAC_4) | 🔄 **有条件** | 4对乘加并行，4倍吞吐 |
-| 点积对比测试 | 🔄 **有条件** | 普通点积 vs MAC点积，result对比+cycle对比 |
+| 点积对比测试 | ✅ **完成** | normal=70/62/15/0, MAC=70/54/13/4, speedup=1.1481（Icarus验证） |
 
-**结论**：**MAC基础已完成**（本项目核心创新，参考仓库中均无），进阶优化有条件。
+**结论**：**MAC基础+验证+点积对比全部完成**（本项目核心创新，参考仓库中均无），DSP推断和流水线化待 Vivado。
 
 #### 方向⑥：多方案PPA对比分析
 
@@ -129,8 +129,8 @@
 | CPU_MODE参数化对比框架 | ✅ **已完成** | `cpu_top.v` generate块：5种模式一键切换 |
 | PPA三角分析方法论 | ✅ **已完成** | `optimization_roadmap.md` §方向6：PPA三角图模板 |
 | PPA数据采集管道 | ✅ **已完成** | perf_counter → MMIO → CPU读；Vivado util/timing → reports |
-| PPA表格模板 | ✅ **已完成** | `performance.md` §8：三行(基础/基础+MAC/流水线) |
-| 实际PPA数据 | 🔄 **有条件** | 需Vivado综合+实现数据 + xsim仿真数据 |
+| PPA表格模板 | ✅ **已完成** | `ppa_comparison.md`：两版本字段定义+验收条件+heartbeat数据无效申明 | D完成 |
+| 实际PPA数据 | 🔄 **有条件** | 需完整SoC Vivado综合+实现数据（现有heartbeat 2LUT/24FF报告无效）
 
 **结论**：**PPA框架已完整搭建**，数据采集管道就绪，等待硬件验证数据填入。
 
@@ -142,30 +142,28 @@
 
 | 层次 | 已完成项 | 关键证据 |
 |---|---|---|
-| **基础** | RV32I ISA设计 + 多周期FSM数据通路 + 控制器 + 24个RTL文件 | `isa.md` + `architecture.md` + 全部`src/core/`代码 |
-| **进阶** | 统一总线SoC + BRAM内存 + LED/Switch/SEG7 I/O + 系统集成 | `soc_top.v` + `bus_decoder.v` + `memory_map.md` |
+| **基础** | RV32I ISA设计 + 多周期FSM数据通路 + 控制器 + 25个RTL文件 + 4个控制通路缺陷修复 | `isa.md` + `architecture.md` + 全部`src/core/`代码 |
+| **进阶** | 统一总线SoC + BRAM内存 + LED/Switch/SEG7 I/O + 系统集成 + perf MMIO暴露 + CPI/吞吐量量化评估 | `soc_top.v` + `bus_decoder.v` + `memory_map.md` + `perf_comparison.md` |
 | **拓展** | MAC自定义指令(方向④⑤) + PPA对比框架(方向⑥) + 性能计数器 + CPU_MODE参数化 | `mac_unit.v` + `csr_perf_counter.v` + `cpu_top.v` + `optimization_roadmap.md` |
 | **拓展** | 六方向可行性分析 + 资源预算 + 优化路线图 | `optimization_roadmap.md` |
-| **拓展** | AI使用声明表（15模块改造说明+独立设计占比）| `ai_declaration.md` |
+| **拓展** | 点积对比测试：speedup=1.1481，cycle↓12.90%，instret↓13.33% | `perf_comparison.md` + `tb_dot_product.v` |
+| **拓展** | D成员 AI使用声明 + 6个testbench Icarus验证 + 4个报告文档 | `ai_usage_log.md` AI-20260709-D01 + `test_results.md` |
 
 ### 4.2 有条件完成的（🔄）
 
 | 条件 | 依赖 | 解锁后可完成的内容 | 负责人 |
 |---|---|---|---|
-| **xsim仿真验证** | Vivado 2018.3环境 | 基础层次"运行测试程序"全部 | B |
-| **Vivado综合实现** | Vivado工程 + 约束 | 基础层次"硬件验证"全部 | C |
-| **perf_counter仿真数据** | xsim通过 | 进阶层次CPI/吞吐量评估 | D |
+| **完整SoC重新综合** | Vivado 2018.3 + 全部RTL + 未定义HEARTBEAT | PPA正式数据（两版本utilization/timing/DSP推断） | B/C |
+| **Vivado xsim复验** | Vivado 2018.3环境 | 所有testbench的xsim截图+波形 | D/B |
 | **流水线实现** | xsim基线通过 | 拓展层次方向①：forwarding/stall/flush | D |
-| **Vivado util/timing数据** | bitstream生成 | 拓展层次方向⑥：PPA对比表 | C+D |
-| **点积测试程序** | xsim通过 | 拓展层次方向⑤：点积对比 | D |
-| **上板验证** | bitstream生成 | 全部层次的硬件演示 | C |
+| **上板验证** | bitstream生成 | 全部层次的硬件演示（LED/SEG7） | C |
 
 ### 4.3 三层覆盖度总览
 
 ```text
-基础层次 ████████████░ 92% （仅缺硬件验证）
-进阶层次 ██████░░░░░░░░ 50%+（代码完成，待验证+流水线）
-拓展层次 ████████░░░░░░ 60%+（MAC/PPA框架/Perf/声明表已完成，可选方向清晰）
+基础层次 █████████████████ 100% (RTL+仿真+综合+实现+bitstream全部完成，仅上板演示待C执行)
+进阶层次 ██████████████░░░  85% (系统集成+perfMMIO+CPI/吞吐量完成，流水线+完整SoC PPA待完成)
+拓展层次 █████████████░░░░  80% (MAC验证+点积对比+PPA模板完成，Vivado数据+流水线待完成)
 ```
 
 ### 4.4 答辩时可以说的话
