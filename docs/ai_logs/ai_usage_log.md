@@ -516,6 +516,61 @@
   - 本条记录仅覆盖成员 B 在 2026-07-09 当天实际使用 AI 辅助完成的 implementation 判读、bitstream 检查、仓库清理与日志补录工作
   - Vivado 生成目录和 `.bit` 文件仅用于本地验证，不作为仓库长期跟踪文件
 
+### 记录编号：AI-20260709-B02
+
+- 日期：2026-07-09
+- 成员：B 张淇
+- 负责模块：Minisys 上板验证、复位极性定位、完整 SoC bitstream 生成与提交整理
+- 工具：Codex
+- 使用阶段：
+  - 在 Vivado 2018.3 中使用已生成的 `minisys_top.bit` 对 Minisys/Artix-7 板卡进行 Program Device 上板验证
+  - 根据 `DONE` 灯、`GLD/YLD/RLD` LED 现象和按键 S6 的表现，区分 JTAG 下载成功、LED 引脚连通、CPU/ROM/MMIO 执行路径是否正常
+  - 通过“按住 S6 才出现 `0xA55A`、松开后图案消失”的现象，定位板级复位输入极性与 RTL 中 `rst_n` 假设相反
+  - 修改顶层复位连接，使外部 S6 输入反相后再送入 SoC，达到“松开运行、按下复位”的实际板卡行为
+  - 重新运行 synthesis、implementation、bitstream generation，确认完整 SoC 时序通过并重新上板验证 LED 图案稳定正确
+  - 在拉取 D 成员远端更新后，处理 `src/core/riscv_mc_cpu.v` 与本地时序修复之间的 stash 冲突，保留 decode-stage 寄存器化时序修复并吸收远端性能计数/分支修复
+  - 整理并提交 Vivado 生成产物、ROM 初始化文件、上板 bitstream 和相关 RTL 改动，准备推送 GitHub
+- 涉及文件：
+  - RTL：`src/board/minisys_top.v`、`src/core/riscv_mc_cpu.v`、`src/core/regfile.v`、`src/memory/inst_ram.v`
+  - ROM/工程：`processor_fpga/boot_rom.mem`、`processor_fpga/boot_rom.hex`、`processor_fpga/processor_fpga.xpr`
+  - Bitstream/报告：`processor_fpga/processor_fpga.runs/impl_1/minisys_top.bit`、`processor_fpga/processor_fpga.runs/impl_1/minisys_top_timing_summary_routed.rpt`、`processor_fpga/processor_fpga.runs/impl_1/minisys_top_drc_routed.rpt`
+  - 日志：`docs/ai_logs/ai_usage_log.md`
+- 提示词摘要：要求 Codex 协助解释上板后 LED/数码管现象，判断 `0xA55A` 应该显示在哪些灯上；在发现长按 S6 才出现图案后定位 reset 极性问题并修改 RTL；随后协助重新生成 bitstream、确认 timing/DRC、处理 Git stash/rebase 冲突并准备上传 GitHub。
+- AI 输出摘要：
+  - 解释 `GLD0~GLD7`、`YLD0~YLD7`、`RLD` 为板载 LED 分组，当前 `0xA55A` 测试应主要观察 GLD/YLD，而不是数码管
+  - 根据 `GLD/YLD` 出现 `0xA55A` 的条件判断 LED 引脚、bitstream 下载、ROM 程序和 LED MMIO 基本链路已连通
+  - 根据“按住 S6 有图案、松开无图案”定位 reset 极性反向问题，并在 `minisys_top.v` 中新增 `sys_rst_n = ~rst_n` 后传给 `soc_top`
+  - 指导重新运行 Vivado 流程并确认 bitstream generation 成功，截图中最终 timing 指标为 `WNS=0.280`、`TNS=0.000`、`Failed Routes=0`
+  - 在 Git 操作中指导先 `stash` 本地改动、`pull --rebase origin main` 拉取远端更新、再 `stash pop` 恢复本地改动
+  - 处理与 D 成员远端更新产生的 `riscv_mc_cpu.v` 冲突：保留 `dec_*` 执行阶段寄存器化路径以避免时序回退，同时保留远端对分支/性能计数退休逻辑的修正
+  - 完成本地提交 `19879e0 fix: validate FPGA board bring-up`，当前仅因网络/代理问题尚未成功推送远端
+- 人工审阅内容：
+  - 人工确认 `0xA55A` 实际显示在 GLD/YLD LED 上，非数码管显示
+  - 人工实测 S6：按住出现 `0xA55A`、松开消失，确认复位极性判断成立
+  - 人工确认修改后上板现象变为“不按 S6 时 LED 图案稳定正确，按下 S6 复位”
+  - 人工核对 Vivado bitstream 完成弹窗和 timing summary，确认 `WNS/TNS/Failed Routes` 满足上板条件
+  - 人工确认 Git 冲突解决后没有残留 `<<<<<<<`、`=======`、`>>>>>>>` 冲突标记
+- 人工修改内容：
+  - 在 `src/board/minisys_top.v` 中将外部复位输入反相为 SoC 内部使用的低有效复位：`assign sys_rst_n = ~rst_n`
+  - 在 `src/core/riscv_mc_cpu.v` 冲突解决中保留 decode-stage 寄存器化的 `dec_*` 控制/操作数路径，并合并远端 performance counter 退休逻辑修复
+  - 将 `boot_rom.mem` / `boot_rom.hex` 与最终 Vivado 生成 bitstream 一并纳入本地提交，便于其他成员不重新综合也能复现上板结果
+- 验证方式：
+  - Vivado 2018.3：重新运行 `Run Synthesis`、`Run Implementation`、`Generate Bitstream`
+  - Vivado 报告检查：阅读 timing summary、DRC、bitstream generation 完成提示
+  - 实物板验证：Program Device 后观察 `DONE` 灯、GLD/YLD LED 的 `0xA55A` 图案、S6 复位行为
+  - Git 验证：`git status` 确认冲突解除、`git commit` 成功生成本地提交
+- 验证结果：
+  - bitstream 生成成功，最终上板 LED 图案完全符合预期
+  - reset 极性问题已解决：松开 S6 时系统运行，按下 S6 时系统复位
+  - 时序通过：`WNS=0.280`、`TNS=0.000`、`Failed Routes=0`
+  - 本地提交成功：`19879e0 fix: validate FPGA board bring-up`
+  - GitHub push 暂未完成，原因是当前网络到 `github.com:443` 连接超时/重置，待代理恢复后继续执行 `git push origin main`
+- 是否合并：已提交到本地 Git，待网络恢复后推送 GitHub
+- 备注：
+  - 本记录覆盖成员 B 张淇在 2026-07-09 下午完成的实物上板验证、复位极性定位、最终 bitstream 生成和提交整理工作
+  - reset 极性是本次上板现象的关键根因；该问题如果不修复，会表现为只有长按 S6 时 CPU 才运行
+  - 本地提交已经完成，后续不要重复 commit，只需网络恢复后继续 `git push origin main`
+
 ### 记录编号：AI-20260709-03
 
 - 日期：2026-07-09
