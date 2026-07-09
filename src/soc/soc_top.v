@@ -57,6 +57,9 @@ module soc_top #(
     wire [31:0] perf_cycle_count;
     wire [31:0] perf_instret_count;
     wire [31:0] perf_mac_count;
+    wire [31:0] perf_br_total_count;
+    wire [31:0] perf_br_mispred_count;
+    wire [31:0] perf_btb_hit_count;
 
     wire [5:0] irq = 6'b000000;
 
@@ -85,7 +88,10 @@ module soc_top #(
         .debug_state    (debug_state),
         .perf_cycle_count   (perf_cycle_count),
         .perf_instret_count (perf_instret_count),
-        .perf_mac_count     (perf_mac_count)
+        .perf_mac_count     (perf_mac_count),
+        .perf_br_total_count  (perf_br_total_count),
+        .perf_br_mispred_count(perf_br_mispred_count),
+        .perf_btb_hit_count   (perf_btb_hit_count)
     );
 
     //==========================================================================
@@ -239,10 +245,22 @@ module soc_top #(
         endcase
     end
 
-    // Result register (MMIO: 0xFFFF_FCC0)
-    // Placeholder for future result_reg
-    wire [31:0] result_rdata = 32'b0;
+    // BTB statistics (MMIO: 0xFFFF_FCC0 - 0xFFFF_FCC8)
+    // Repurposed from result_reg placeholder.
+    //   0xFFFF_FCC0: br_total_count   (total branches encountered)
+    //   0xFFFF_FCC4: br_mispred_count (mispredictions)
+    //   0xFFFF_FCC8: btb_hit_count    (BTB lookup hits)
+    reg  [31:0] result_rdata;
     wire        result_ready = 1'b1;
+
+    always @(*) begin
+        case (dbus_addr[3:2])
+            2'b00:   result_rdata = perf_br_total_count;
+            2'b01:   result_rdata = perf_br_mispred_count;
+            2'b10:   result_rdata = perf_btb_hit_count;
+            default: result_rdata = 32'b0;
+        endcase
+    end
 
     //==========================================================================
     // Bus Read-Data Multiplexer

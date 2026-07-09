@@ -6,11 +6,11 @@
 // Features:
 //   - Full forwarding (EX/MEM→EX, MEM/WB→EX, MEM/WB→MEM store data)
 //   - Load-use hazard detection with 1-cycle stall
-//   - Static branch prediction (predict not-taken), 1-cycle mispredict penalty
+//   - BTB dynamic branch prediction (16-entry, 2-bit saturating counter)
 //   - JAL/JALR resolved in ID, 1-cycle penalty
 //   - MAC instruction fully supported with forwarding
 //   - EBREAK → halt + pipeline drain
-//   - Performance counters (cycle/instret/mac)
+//   - Performance counters (cycle/instret/mac/br_total/br_mispred/btb_hit)
 //
 // Board: Minisys (XC7A100T-FGG484-1, 100MHz)
 // Reuses: control_unit, regfile, alu, branch_unit, imm_gen, mac_unit,
@@ -45,7 +45,12 @@ module riscv_pipeline_cpu (
     // Performance counters
     output wire [31:0] perf_cycle_count,
     output wire [31:0] perf_instret_count,
-    output wire [31:0] perf_mac_count
+    output wire [31:0] perf_mac_count,
+
+    // BTB branch prediction statistics
+    output wire [31:0] perf_br_total_count,
+    output wire [31:0] perf_br_mispred_count,
+    output wire [31:0] perf_btb_hit_count
 );
 
     //==========================================================================
@@ -64,6 +69,7 @@ module riscv_pipeline_cpu (
     reg [31:0] if_id_pc;
     reg [31:0] if_id_instr;
     reg        if_id_valid;       // 1 = valid instruction, 0 = bubble (NOP)
+    reg        if_id_btb_pred;    // BTB prediction captured at IF stage
 
     //--------------------------------------------------------------------------
     // ID/EX pipeline registers
@@ -90,6 +96,7 @@ module riscv_pipeline_cpu (
     reg                id_ex_instret_pulse;
     reg                id_ex_mac_pulse;
     reg                id_ex_valid;
+    reg                id_ex_btb_pred_taken; // BTB prediction for this instruction
 
     //--------------------------------------------------------------------------
     // EX/MEM pipeline registers
@@ -142,12 +149,13 @@ module riscv_pipeline_cpu (
     // Branch target (EX stage): ID/EX PC + immediate
     assign branch_target_w = id_ex_pc + id_ex_imm;
 
-    // Next-PC priority: EX-stage redirects (older) > ID-stage redirects (newer) > PC+4
+    // Next-PC priority: EX mispred recovery > EX JALR > ID JAL > BTB prediction > PC+4
     wire [31:0] pc_next;
-    assign pc_next = branch_flush ? branch_target_w :
-                     jalr_flush   ? jalr_target_w   :
-                     jal_flush    ? jal_target_w    :
-                                     pc_plus_4_w;
+    assign pc_next = branch_flush    ? branch_target_w :
+                     jalr_flush      ? jalr_target_w   :
+                     jal_flush       ? jal_target_w    :
+                     use_btb_prediction ? btb_predict_target :
+                                          pc_plus_4_w;
 
     //==========================================================================
     // Wires — ID stage
@@ -214,7 +222,6 @@ module riscv_pipeline_cpu (
     // Wires — Hazard detection
     //==========================================================================
     wire load_use_hazard;
-    wire branch_flush;                 // Taken branch flush
     wire ebreak_halt;
 
     //==========================================================================
@@ -224,6 +231,84 @@ module riscv_pipeline_cpu (
     wire        perf_instret_pulse;
     wire        perf_mac_pulse;
     wire [31:0] cycle_cnt, instret_cnt, mac_cnt;
+
+    //==========================================================================
+    // BTB (Branch Target Buffer) — Dynamic Branch Prediction
+    //
+    // 16-entry direct-mapped BTB with 2-bit saturating counters.
+    // Lookup in IF stage (combinational), update in EX stage (sequential).
+    //
+    // PC selection with BTB prediction:
+    //   IF: BTB lookup → if predict taken, fetch from BTB target instead of PC+4
+    //   EX: Branch resolves → verify prediction, flush if wrong, update BTB
+    //
+    // Misprediction penalty: 1 cycle (same as static prediction)
+    // Benefit: fewer taken-branch flushes (only on misprediction, not every taken branch)
+    //==========================================================================
+    wire        btb_predict_taken;
+    wire [31:0] btb_predict_target;
+    wire [31:0] btb_lookup_cnt;
+    wire [31:0] btb_hit_cnt;
+    wire [31:0] btb_mispred_cnt;
+
+    // BTB prediction is used for PC selection in IF stage
+    // Only redirect when BTB predicts taken AND we haven't already taken a branch
+    wire        use_btb_prediction;
+    assign use_btb_prediction = btb_predict_taken && !branch_flush && !jalr_flush && !jal_flush;
+
+    // BTB update: triggered when a conditional branch resolves in EX stage
+    wire btb_update_valid;
+    wire [31:0] btb_actual_target;
+    assign btb_update_valid = id_ex_valid &&
+                              (id_ex_alu_type == `ALUTYPE_JUMP) &&
+                              !id_ex_jump && !id_ex_jump_reg;
+    assign btb_actual_target = id_ex_pc + id_ex_imm;
+
+    btb #(
+        .ENTRIES(16)
+    ) u_btb (
+        .clk              (clk),
+        .rst_n            (rst_n),
+        .lookup_pc        (pc_val),
+        .predict_taken    (btb_predict_taken),
+        .predict_target   (btb_predict_target),
+        .update_valid     (btb_update_valid),
+        .update_pc        (id_ex_pc),
+        .update_target    (btb_actual_target),
+        .update_taken     (ex_br_taken),
+        .btb_lookup_count (btb_lookup_cnt),
+        .btb_hit_count    (btb_hit_cnt),
+        .btb_mispred_count(btb_mispred_cnt)
+    );
+
+    // BTB misprediction: we predicted one way but branch resolved the other way.
+    // This happens when BTB predicts "taken" but branch is not-taken,
+    // OR BTB predicts "not-taken" (or misses) but branch is taken.
+    // The latter case is identical to the existing branch_flush.
+    // We track both for accuracy statistics.
+    reg [31:0] br_total_cnt, br_mispred_cnt, btb_hit_cnt_r;
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            br_total_cnt   <= 32'd0;
+            br_mispred_cnt <= 32'd0;
+            btb_hit_cnt_r  <= 32'd0;
+        end else begin
+            if (btb_update_valid) begin
+                br_total_cnt <= br_total_cnt + 32'd1;
+                // Misprediction: saved BTB prediction (from IF stage) vs actual outcome
+                if (id_ex_btb_pred_taken != ex_br_taken)
+                    br_mispred_cnt <= br_mispred_cnt + 32'd1;
+                // BTB predicted taken for this branch
+                if (id_ex_btb_pred_taken)
+                    btb_hit_cnt_r <= btb_hit_cnt_r + 32'd1;
+            end
+        end
+    end
+
+    assign perf_br_total_count   = br_total_cnt;
+    assign perf_br_mispred_count = br_mispred_cnt;
+    assign perf_btb_hit_count    = btb_hit_cnt_r;
 
     //==========================================================================
     // Submodule: Control Unit (combinational, driven by IF/ID instruction)
@@ -416,10 +501,13 @@ module riscv_pipeline_cpu (
     assign jalr_flush = id_ex_valid && id_ex_jump_reg;
 
     // Branch flush: taken branch in EX stage → flush IF/ID + ID/EX
+    // With BTB: only flush if BTB did NOT predict taken (i.e., misprediction).
+    // If BTB correctly predicted taken, the IF stage already fetched from target.
     assign branch_flush = id_ex_valid &&
                           (id_ex_alu_type == `ALUTYPE_JUMP) &&
                           !id_ex_jump && !id_ex_jump_reg &&
-                          ex_br_taken;
+                          ex_br_taken &&
+                          !id_ex_btb_pred_taken;  // BTB misprediction only
 
     // EBREAK halt: detected in ID stage
     assign ebreak_halt = if_id_valid && ctrl_halt;
@@ -516,6 +604,7 @@ module riscv_pipeline_cpu (
             if_id_pc    <= `PC_INIT;
             if_id_instr <= `RV_NOP;
             if_id_valid <= `FALSE;
+            if_id_btb_pred <= `FALSE;
 
             id_ex_pc          <= `PC_INIT;
             id_ex_rs1_data    <= `ZERO_WORD;
@@ -539,6 +628,7 @@ module riscv_pipeline_cpu (
             id_ex_instret_pulse <= `FALSE;
             id_ex_mac_pulse   <= `FALSE;
             id_ex_valid       <= `FALSE;
+            id_ex_btb_pred_taken <= `FALSE;
 
             ex_mem_pc_plus_4    <= `ZERO_WORD;
             ex_mem_alu_result   <= `ZERO_WORD;
@@ -628,6 +718,7 @@ module riscv_pipeline_cpu (
                 id_ex_instret_pulse <= `FALSE;
                 id_ex_mac_pulse   <= `FALSE;
                 id_ex_valid       <= `FALSE;
+                id_ex_btb_pred_taken <= `FALSE;
             end else begin
                 // Normal advance: ID/EX gets IF/ID's decoded values
                 id_ex_pc          <= if_id_pc;
@@ -652,6 +743,7 @@ module riscv_pipeline_cpu (
                 id_ex_instret_pulse <= ctrl_instret_pulse;
                 id_ex_mac_pulse   <= ctrl_mac_pulse;
                 id_ex_valid       <= if_id_valid;  // JAL itself must proceed to WB (rd←PC+4)
+                id_ex_btb_pred_taken <= if_id_btb_pred;  // flow BTB prediction with instr
                 // Note: jal_flush already handled PC redirect + IF/ID flush;
                 // the bubble propagates naturally through the pipeline.
             end
@@ -670,6 +762,7 @@ module riscv_pipeline_cpu (
                 if_id_pc    <= pc_val;
                 if_id_instr <= ibus_rdata;
                 if_id_valid <= `TRUE;
+                if_id_btb_pred <= btb_predict_taken;  // capture BTB prediction at IF
             end
         end
     end

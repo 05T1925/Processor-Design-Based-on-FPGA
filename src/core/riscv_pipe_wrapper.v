@@ -37,7 +37,12 @@ module riscv_pipe_wrapper (
     // Performance counters
     output wire [31:0] perf_cycle_count,
     output wire [31:0] perf_instret_count,
-    output wire [31:0] perf_mac_count
+    output wire [31:0] perf_mac_count,
+
+    // BTB branch prediction statistics
+    output wire [31:0] perf_br_total_count,
+    output wire [31:0] perf_br_mispred_count,
+    output wire [31:0] perf_btb_hit_count
 );
 
     //--------------------------------------------------------------------------
@@ -67,7 +72,10 @@ module riscv_pipe_wrapper (
         .debug_illegal  (),
         .perf_cycle_count   (perf_cycle_count),
         .perf_instret_count (perf_instret_count),
-        .perf_mac_count     (perf_mac_count)
+        .perf_mac_count     (perf_mac_count),
+        .perf_br_total_count  (perf_br_total_count),
+        .perf_br_mispred_count(perf_br_mispred_count),
+        .perf_btb_hit_count   (perf_btb_hit_count)
     );
 
 endmodule

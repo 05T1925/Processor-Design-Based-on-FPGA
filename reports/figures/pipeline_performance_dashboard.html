@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RV32I 五级流水线 CPU — 性能效率仪表板</title>
+<style>
+  :root {
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --border: #e2e8f0;
+    --accent: #3b82f6;
+    --accent2: #10b981;
+    --accent3: #f59e0b;
+    --accent4: #ef4444;
+    --accent5: #8b5cf6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    line-height: 1.5;
+  }
+  .dashboard {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+  .subtitle {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+  }
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .kpi-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi-delta {
+    font-size: 0.8rem;
+    margin-top: 4px;
+  }
+  .kpi-delta.up { color: var(--accent2); }
+  .kpi-delta.down { color: var(--accent4); }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  tr:last-child td { border-bottom: none; }
+  .bar-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .bar {
+    height: 20px;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+  .bar-label {
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  .cpi-bar { background: var(--accent); }
+  .mips-bar { background: var(--accent2); }
+  .pred-bar { background: var(--accent3); }
+  .lut-bar { background: var(--accent5); }
+  .pipeline-diagram {
+    display: flex;
+    gap: 2px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.7rem;
+    overflow-x: auto;
+    padding: 8px 0;
+  }
+  .pipeline-slot {
+    min-width: 100px;
+    padding: 6px;
+    text-align: center;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  .pipeline-slot.active { background: #dbeafe; border-color: #93c5fd; }
+  .pipeline-slot.stall { background: #fef3c7; border-color: #fcd34d; }
+  .pipeline-slot.flush { background: #fee2e2; border-color: #fca5a5; }
+  .pipeline-slot.btb { background: #d1fae5; border-color: #6ee7b7; }
+  .pipeline-label {
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .btb-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .stat-value {
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div class="dashboard">
+
+<h1>🖥️ RV32I 五级流水线 CPU — 性能效率仪表板</h1>
+<p class="subtitle">Minisys 开发板 (XC7A100T-FGG484, 100MHz) | CPU_MODE=5 | BTB 16-entry 2-bit | 日期: 2026-07-09</p>
+
+<!-- ===== KPI Row ===== -->
+<div class="kpi-row">
+  <div class="kpi-card">
+    <div class="kpi-label">CPI (实测估计)</div>
+    <div class="kpi-value" style="color:var(--accent2);">~1.08</div>
+    <div class="kpi-delta up">▼ 73% vs. 多周期 CPI=4.0</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">吞吐量 @100MHz</div>
+    <div class="kpi-value" style="color:var(--accent);">~92 MIPS</div>
+    <div class="kpi-delta up">▲ 3.7× vs. 多周期 ~25 MIPS</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">BTB 预测正确率</div>
+    <div class="kpi-value" style="color:var(--accent3);">~85-92%</div>
+    <div class="kpi-delta up">▲ vs. 静态预测 ~50%</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">硬件效率</div>
+    <div class="kpi-value" style="color:var(--accent5);">77 MIPS/KLUT</div>
+    <div class="kpi-delta up">▲ 2.5× vs. 多周期 31 MIPS/KLUT</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">MAC 加速比</div>
+    <div class="kpi-value" style="color:var(--accent2);">1.15×</div>
+    <div class="kpi-delta up">点积: 62→54 周期 (-12.9%)</div>
+  </div>
+</div>
+
+<!-- ===== CPI Comparison Chart ===== -->
+<div class="grid-2">
+  <div class="card">
+    <h2>📊 CPI 对比（按 CPU 架构）</h2>
+    <table>
+      <tr><th>架构</th><th>CPI</th><th>相对性能</th><th>说明</th></tr>
+      <tr>
+        <td>多周期 FSM (MODE=0)</td>
+        <td><strong>4.00</strong></td>
+        <td>
+          <div class="bar-container">
+            <div class="bar cpi-bar" style="width:200px;"></div>
+            <span class="bar-label">基线 1×</span>
+          </div>
+        </td>
+        <td>6 状态, ALU=4 周期</td>
+      </tr>
+      <tr>
+        <td>单周期 (MODE=1)</td>
+        <td><strong>1.00</strong></td>
+        <td>
+          <div class="bar-container">
+            <div class="bar cpi-bar" style="width:50px;"></div>
+            <span class="bar-label">4×</span>
+          </div>
+        </td>
+        <td>理想但 Fmax 极低</td>
+      </tr>
+      <tr>
+        <td>5级流水线 静态预测</td>
+        <td><strong>~1.16</strong></td>
+        <td>
+          <div class="bar-container">
+            <div class="bar cpi-bar" style="width:58px;"></div>
+            <span class="bar-label">3.45×</span>
+          </div>
+        </td>
+        <td>不跳转预测, ~50% 分支误预测</td>
+      </tr>
+      <tr>
+        <td><strong>5级流水线 + BTB 🎯</strong></td>
+        <td><strong>~1.08</strong></td>
+        <td>
+          <div class="bar-container">
+            <div class="bar cpi-bar" style="width:54px; background: var(--accent2);"></div>
+            <span class="bar-label">3.70×</span>
+          </div>
+        </td>
+        <td>16 条目 2-bit, ~88% 正确率</td>
+      </tr>
+      <tr>
+        <td>理想流水线 (0 冒险)</td>
+        <td><strong>1.00</strong></td>
+        <td>
+          <div class="bar-container">
+            <div class="bar cpi-bar" style="width:50px; background: var(--text-secondary);"></div>
+            <span class="bar-label">4×</span>
+          </div>
+        </td>
+        <td>理论上限</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ===== Throughput Chart ===== -->
+  <div class="card">
+    <h2>⚡ 吞吐量对比 (MIPS @100MHz)</h2>
+    <table>
+      <tr><th>架构</th><th>MIPS</th><th>相对</th><th>效率</th></tr>
+      <tr><td>多周期 FSM</td><td><strong>~25</strong></td><td>1.00×</td><td>31 MIPS/KLUT</td></tr>
+      <tr><td>5级流水线 静态</td><td><strong>~86</strong></td><td>3.45×</td><td>91 MIPS/KLUT</td></tr>
+      <tr><td><strong>5级流水线 + BTB</strong></td><td><strong>~92</strong></td><td><strong>3.70×</strong></td><td><strong>77 MIPS/KLUT</strong></td></tr>
+      <tr><td>理想流水线</td><td>100</td><td>4.00×</td><td>—</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== Pipeline CPI Breakdown ===== -->
+<div class="grid-2">
+  <div class="card">
+    <h2>🔬 流水线 CPI 分解</h2>
+    <table>
+      <tr><th>CPI 分量</th><th>静态预测</th><th>BTB 预测</th><th>节省</th></tr>
+      <tr><td>基础 CPI (理想)</td><td>1.000</td><td>1.000</td><td>—</td></tr>
+      <tr><td>Load-Use 停顿</td><td>+0.020</td><td>+0.020</td><td>—</td></tr>
+      <tr><td>JAL/JALR 刷新</td><td>+0.020</td><td>+0.020</td><td>—</td></tr>
+      <tr style="background:#fef3c7;"><td><strong>分支误预测</strong></td><td><strong>+0.120</strong></td><td><strong>+0.040</strong></td><td><strong>-0.080</strong></td></tr>
+      <tr style="font-weight:700;"><td>合计 CPI</td><td>1.160</td><td style="color:var(--accent2);">1.080</td><td style="color:var(--accent2);">-6.9%</td></tr>
+    </table>
+  </div>
+
+  <!-- ===== BTB 2-bit Counter State Machine ===== -->
+  <div class="card">
+    <h2>🧠 BTB 2-bit 饱和计数器状态机</h2>
+    <div style="font-family: monospace; font-size: 0.8rem; line-height: 2; padding: 8px 0;">
+      <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+        <div style="background:#fee2e2; padding:8px 16px; border-radius:8px; text-align:center;">
+          <strong>SNT (00)</strong><br>
+          Strongly<br>Not Taken<br>
+          <span style="font-size:0.7rem;color:var(--accent4);">→ 预测不跳转</span>
+        </div>
+        <div style="font-size:1.5rem; align-self:center;">→</div>
+        <div style="background:#fef3c7; padding:8px 16px; border-radius:8px; text-align:center;">
+          <strong>WNT (01)</strong><br>
+          Weakly<br>Not Taken<br>
+          <span style="font-size:0.7rem;color:var(--accent3);">→ 预测不跳转</span>
+        </div>
+        <div style="font-size:1.5rem; align-self:center;">→</div>
+        <div style="background:#d1fae5; padding:8px 16px; border-radius:8px; text-align:center;">
+          <strong>WT (10)</strong><br>
+          Weakly<br>Taken<br>
+          <span style="font-size:0.7rem;color:var(--accent2);">→ 预测跳转 ✓</span>
+        </div>
+        <div style="font-size:1.5rem; align-self:center;">→</div>
+        <div style="background:#dbeafe; padding:8px 16px; border-radius:8px; text-align:center;">
+          <strong>ST (11)</strong><br>
+          Strongly<br>Taken<br>
+          <span style="font-size:0.7rem;color:var(--accent);">→ 预测跳转 ✓</span>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:12px; color:var(--text-secondary); font-size:0.75rem;">
+        Taken → counter++ (右移) &nbsp;|&nbsp; Not Taken → counter-- (左移)<br>
+        循环 10 次: 正确率 = 8/10 = 80% (首末各错一次)
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Pipeline Diagram ===== -->
+<div class="card" style="margin-bottom:24px;">
+  <h2>📋 五级流水线时空图（含冒险处理）</h2>
+  <p style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:12px;">
+    示例：LW→ADD (load-use stall) + BEQ taken (branch flush) + BTB 预测
+  </p>
+
+  <div class="pipeline-diagram">
+    <div style="min-width:60px;font-weight:600;font-size:0.7rem;">指令</div>
+    <div style="min-width:100px;font-weight:600;font-size:0.7rem;">C1</div>
+    <div style="min-width:100px;font-weight:600;font-size:0.7rem;">C2</div>
+    <div style="min-width:100px;font-weight:600;font-size:0.7rem;">C3</div>
+    <div style="min-width:100px;font-weight:600;font-size:0.7rem;">C4</div>
+    <div style="min-width:100px;font-weight:600;font-size:0.7rem;">C5</div>
+    <div style="min-width:100px;font-weight:600;font-size:0.7rem;">C6</div>
+    <div style="min-width:100px;font-weight:600;font-size:0.7rem;">C7</div>
+    <div style="min-width:100px;font-weight:600;font-size:0.7rem;">C8</div>
+  </div>
+
+  <div class="pipeline-diagram">
+    <div style="min-width:60px;font-size:0.7rem;">LW x1,0(x2)</div>
+    <div class="pipeline-slot active">IF</div>
+    <div class="pipeline-slot active">ID</div>
+    <div class="pipeline-slot active">EX</div>
+    <div class="pipeline-slot active">MEM</div>
+    <div class="pipeline-slot active">WB</div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot"></div>
+  </div>
+  <div class="pipeline-diagram">
+    <div style="min-width:60px;font-size:0.7rem;">ADD x3,x1,x4</div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot active">IF</div>
+    <div class="pipeline-slot active">ID</div>
+    <div class="pipeline-slot stall">STALL</div>
+    <div class="pipeline-slot active">EX</div>
+    <div class="pipeline-slot active">MEM</div>
+    <div class="pipeline-slot active">WB</div>
+    <div class="pipeline-slot"></div>
+  </div>
+  <div class="pipeline-diagram">
+    <div style="min-width:60px;font-size:0.7rem;">BEQ x1,x2,LOOP</div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot active">IF</div>
+    <div class="pipeline-slot active">ID</div>
+    <div class="pipeline-slot active btb">EX (BTB=T)</div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot"></div>
+  </div>
+  <div class="pipeline-diagram">
+    <div style="min-width:60px;font-size:0.7rem;">(PC+4 误取指)</div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot active">IF</div>
+    <div class="pipeline-slot flush">FLUSH!</div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot"></div>
+  </div>
+  <div class="pipeline-diagram">
+    <div style="min-width:60px;font-size:0.7rem;">LOOP: SUB x5,x6,x7</div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot"></div>
+    <div class="pipeline-slot active btb">IF (BTB→T)</div>
+    <div class="pipeline-slot active">ID</div>
+    <div class="pipeline-slot active">EX</div>
+    <div class="pipeline-slot active">WB</div>
+  </div>
+
+  <div style="margin-top:12px; font-size:0.75rem; display:flex; gap:16px;">
+    <span>🟦 正常执行</span>
+    <span>🟨 Load-Use Stall (1 周期)</span>
+    <span>🟥 Branch Flush (误预测惩罚)</span>
+    <span>🟩 BTB 预测命中</span>
+  </div>
+</div>
+
+<!-- ===== Resource & Timing ===== -->
+<div class="grid-2">
+  <div class="card">
+    <h2>🔧 资源利用估计 (XC7A100T)</h2>
+    <table>
+      <tr><th>资源</th><th>多周期 (MODE=0)</th><th>流水线+BTB (MODE=5)</th><th>增量</th></tr>
+      <tr><td>LUT</td><td>~800 (1.3%)</td><td>~1,200 (1.9%)</td><td style="color:var(--accent3);">+50%</td></tr>
+      <tr><td>FF</td><td>~350 (0.3%)</td><td>~1,880 (1.5%)</td><td style="color:var(--accent3);">+437%</td></tr>
+      <tr><td>BRAM</td><td>0</td><td>0</td><td>—</td></tr>
+      <tr><td>DSP48E1</td><td>1 (0.4%)</td><td>1 (0.4%)</td><td>—</td></tr>
+      <tr><td>WNS @100MHz</td><td style="color:var(--accent2);">+7.212ns ✅</td><td>+2~5ns (估计)</td><td>—</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>🎯 BTB 预测正确率预期（按程序类型）</h2>
+    <table>
+      <tr><th>程序类型</th><th>分支占比</th><th>BTB 正确率</th><th>CPI</th></tr>
+      <tr><td>简单算术 (basic_test)</td><td>~5%</td><td style="color:var(--accent2);">~90%</td><td>~1.02</td></tr>
+      <tr><td>点积 (dot_product)</td><td>~12%</td><td style="color:var(--accent2);">~85%</td><td>~1.06</td></tr>
+      <tr><td>猜数字游戏</td><td>~25%</td><td style="color:var(--accent3);">~88%</td><td>~1.13</td></tr>
+      <tr><td>冒泡排序</td><td>~20%</td><td>~82%</td><td>~1.10</td></tr>
+      <tr><td><strong>矩阵乘法</strong></td><td>~30%</td><td style="color:var(--accent2);"><strong>~92%</strong></td><td><strong>~1.15</strong></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== Hazard Resolution Summary ===== -->
+<div class="card" style="margin-bottom:24px;">
+  <h2>🛡️ 冒险处理完整方案</h2>
+  <table>
+    <tr><th>冒险类型</th><th>检测方式</th><th>处理方式</th><th>惩罚</th><th>硬件开销</th></tr>
+    <tr>
+      <td><strong>RAW 数据冒险</strong></td>
+      <td>EX/MEM.rd == ID/EX.rs</td>
+      <td>3 条转发旁路 (EX/MEM→EX, MEM/WB→EX, MEM/WB→MEM)</td>
+      <td style="color:var(--accent2);">0 周期</td>
+      <td>~200 LUT (MUX)</td>
+    </tr>
+    <tr>
+      <td><strong>Load-Use 冒险</strong></td>
+      <td>EX.mem_read && EX.rd == ID.rs</td>
+      <td>1 周期停顿 + MEM/WB 转发</td>
+      <td style="color:var(--accent3);">1 周期</td>
+      <td>~15 LUT (比较器)</td>
+    </tr>
+    <tr>
+      <td><strong>分支 (静态)</strong></td>
+      <td>EX branch_taken=1</td>
+      <td>预测不跳转, 跳转时刷新 IF/ID+ID/EX</td>
+      <td style="color:var(--accent4);">1 周期</td>
+      <td>~20 LUT</td>
+    </tr>
+    <tr>
+      <td><strong>分支 (BTB 动态)</strong></td>
+      <td>BTB lookup + EX 验证</td>
+      <td>BTB 预测 + EX 刷新 (若误预测)</td>
+      <td style="color:var(--accent3);">1 周期 (仅误预测)</td>
+      <td>~250 LUT + ~230 FF</td>
+    </tr>
+    <tr>
+      <td><strong>JAL</strong></td>
+      <td>ID opcode=JAL</td>
+      <td>ID 阶段计算目标, 刷新 IF/ID</td>
+      <td style="color:var(--accent3);">1 周期</td>
+      <td>~10 LUT</td>
+    </tr>
+    <tr>
+      <td><strong>JALR</strong></td>
+      <td>ID→EX opcode=JALR</td>
+      <td>EX 阶段用转发 rs1 计算目标, 刷新 IF/ID+ID/EX</td>
+      <td style="color:var(--accent3);">1 周期</td>
+      <td>~15 LUT</td>
+    </tr>
+    <tr>
+      <td><strong>EBREAK 停机</strong></td>
+      <td>ID instr==EBREAK</td>
+      <td>设置 halted, 排空流水线 (~4 周期)</td>
+      <td>~4 周期</td>
+      <td>~10 LUT</td>
+    </tr>
+  </table>
+</div>
+
+</div>
+</body>
+</html>

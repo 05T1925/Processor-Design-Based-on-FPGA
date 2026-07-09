@@ -40,7 +40,12 @@ module cpu_top #(
 
     output wire [31:0] perf_cycle_count,
     output wire [31:0] perf_instret_count,
-    output wire [31:0] perf_mac_count
+    output wire [31:0] perf_mac_count,
+
+    // BTB statistics (valid only in MODE=5)
+    output wire [31:0] perf_br_total_count,
+    output wire [31:0] perf_br_mispred_count,
+    output wire [31:0] perf_btb_hit_count
 );
 
     generate
@@ -70,6 +75,9 @@ module cpu_top #(
                 .perf_instret_count (perf_instret_count),
                 .perf_mac_count     (perf_mac_count)
             );
+            assign perf_br_total_count   = 32'b0;
+            assign perf_br_mispred_count = 32'b0;
+            assign perf_btb_hit_count    = 32'b0;
 
         //======================================================================
         // Mode 1: RV32I Single-Cycle (from riscv-minisys-cpu / BUPT)
@@ -97,6 +105,9 @@ module cpu_top #(
             assign perf_cycle_count   = 32'b0;
             assign perf_instret_count = 32'b0;
             assign perf_mac_count     = 32'b0;
+            assign perf_br_total_count   = 32'b0;
+            assign perf_br_mispred_count = 32'b0;
+            assign perf_btb_hit_count    = 32'b0;
 
         //======================================================================
         // Mode 5: RV32I 5-Stage Pipeline CPU (P2 Sprint)
@@ -122,7 +133,10 @@ module cpu_top #(
                 .debug_state    (debug_state),
                 .perf_cycle_count   (perf_cycle_count),
                 .perf_instret_count (perf_instret_count),
-                .perf_mac_count     (perf_mac_count)
+                .perf_mac_count     (perf_mac_count),
+                .perf_br_total_count  (perf_br_total_count),
+                .perf_br_mispred_count(perf_br_mispred_count),
+                .perf_btb_hit_count   (perf_btb_hit_count)
             );
 
         //======================================================================
@@ -142,6 +156,9 @@ module cpu_top #(
             assign perf_cycle_count   = 32'b0;
             assign perf_instret_count = 32'b0;
             assign perf_mac_count     = 32'b0;
+            assign perf_br_total_count   = 32'b0;
+            assign perf_br_mispred_count = 32'b0;
+            assign perf_btb_hit_count    = 32'b0;
         end
     endgenerate
 

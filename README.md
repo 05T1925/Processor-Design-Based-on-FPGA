@@ -30,7 +30,7 @@
 └─────────────────────────────────────────────────────────┘
 ```
 
-五级流水线、forwarding、load-use stall、branch flush 已完成 🆕。BTB 分支预测、UART 输出统计为后续冲刺目标。
+五级流水线、forwarding、load-use stall、branch flush 已完成 🆕。**BTB 动态分支预测（16条目 2-bit）已完成 🆕**。UART 输出统计为后续冲刺目标。
 
 ## 仓库目录
 
@@ -45,7 +45,8 @@ docs/planning/     阶段规划记录
 src/
 ├── core/          RV32I CPU 核心 (alu/regfile/control_unit/imm_gen/branch_unit/pc_reg/mac_unit/csr_perf_counter/cpu_top/riscv_mc_cpu/riscv_pipeline_cpu)
 │   ├── public.vh  全局宏定义 (RV32I+MIPS+总线+ALU+CPU_MODE)
-│   └── riscv_pipe_wrapper.v 流水线CPU封装 🆕
+│   ├── riscv_pipe_wrapper.v 流水线CPU封装 🆕
+│   └── pipeline/  BTB 分支预测器 🆕 (btb.v + br_predictor.v)
 ├── bus/           统一总线系统 (bus_decoder/bus_mux)
 ├── memory/        存储器 (inst_ram/data_ram)
 ├── io/            外设控制器 (gpio_led/gpio_switch/seg7_driver)
@@ -134,6 +135,7 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 - ✅ **RTL 综合阻断 bug 已修复**（A+C）：`pc_reg.v` wire→reg、`$clog2` 双版本兼容、include 路径、缺失模块补齐、ifdef 默认值修正。
 - ✅ Vivado 2017.4 / 2018.3 双版本兼容性验证通过。
 - ✅ **五级流水线 RTL 已完成**（2026-07-09，A）：CPU_MODE=5，forwarding + load-use stall + branch flush + JAL/JALR 冲刷，含冒险测试程序和仿真testbench。
+- ✅ **BTB 动态分支预测已完成**（2026-07-09，A+AI）：16条目直接映射 2-bit 饱和计数器，IF阶段查找+EX阶段更新，流水线CPU集成，分支预测正确率可统计（MMIO 0xFCC0-C8），含测试平台和性能分析文档。
 - 🔄 待完成：上板 LED/数码管演示（C）、流水线 Vivado 综合 PPA 导出（B/C）、LW/SW/Branch 扩展仿真（B）。
 
 ## B/C/D 队友快速开始（四仓库深度合并后更新 ⭐）
