@@ -511,10 +511,8 @@ rs1_forwarded = EX/MEM.alu_result  (if EX/MEM.rd == ID/EX.rs1)
 |---|---|---|---|
 | 完整SoC重新综合（两版本：基线+MAC）| **P1 紧急** | B/C | Vivado 2018.3 |
 | 上板LED/数码管演示 | **P0 验收必备** | C | bitstream已生成 |
-| ~~五级流水线实现~~ ✅ | ~~P2 冲刺~~ **已完成** | D+AI | ~~xsim基线通过~~ RTL就绪，待Vivado综合 |
-| ~~BTB 分支预测实现~~ ✅ 🆕 | ~~P2 冲刺~~ **已完成** | D+AI | `btb.v` + `br_predictor.v` 已创建 |
 | 流水线PPA数据采集(Vivado综合) | **P1 紧急** | B/C | riscv_pipeline_cpu.v + btb.v 已创建 |
-| BTB 预测正确率 xsim 验证 🆕 | P2 冲刺 | D | tb_pipeline_btb.v 已创建，待仿真 |
+| BTB 预测正确率 xsim 验证 🆕 | P2 冲刺 | A/D | tb_pipeline_btb.v 已创建，待仿真 |
 | 猜数字游戏演示程序 | P2 冲刺 | D | 性能计数器MMIO |
 
 ---

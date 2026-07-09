@@ -30,7 +30,7 @@
 └─────────────────────────────────────────────────────────┘
 ```
 
-五级流水线、forwarding、load-use stall、branch flush 已完成 🆕。**BTB 动态分支预测（16条目 2-bit）已完成 🆕**。UART 输出统计为后续冲刺目标。
+五级流水线、forwarding、load-use stall、branch flush 已完成 🆕。**BTB 动态分支预测（16条目 2-bit）已完成 🆕**。**12 文档答辩数据体系已完成 🆕**（含性能总览/CPI分解/资源利用/加速比/前后对比/性能图表等）。UART 输出统计为后续冲刺目标。
 
 ## 仓库目录
 
@@ -136,6 +136,7 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 - ✅ Vivado 2017.4 / 2018.3 双版本兼容性验证通过。
 - ✅ **五级流水线 RTL 已完成**（2026-07-09，A）：CPU_MODE=5，forwarding + load-use stall + branch flush + JAL/JALR 冲刷，含冒险测试程序和仿真testbench。
 - ✅ **BTB 动态分支预测已完成**（2026-07-09，A+AI）：16条目直接映射 2-bit 饱和计数器，IF阶段查找+EX阶段更新，流水线CPU集成，分支预测正确率可统计（MMIO 0xFCC0-C8），含测试平台和性能分析文档。
+- ✅ **12 文档答辩数据体系已完成**（2026-07-09，A+AI）：`reports/tables/` 下 12 个性能分析文档（性能总览/CPI分解/资源利用/加速比/前后对比/性能图表/冒险分析/分支预测/PPA估计等），含 ASCII 图表集和答辩 PPT 建议清单。
 - 🔄 待完成：上板 LED/数码管演示（C）、流水线 Vivado 综合 PPA 导出（B/C）、LW/SW/Branch 扩展仿真（B）。
 
 ## B/C/D 队友快速开始（四仓库深度合并后更新 ⭐）
@@ -226,10 +227,11 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 5. ~~**D** 编写 MAC/性能计数器 testbench，准备点积测试程序。~~ ✅ 已完成
 6. ~~**D** 对比普通点积和MAC点积的性能数据。~~ ✅ 已完成
 7. ~~**A** 实现五级流水线 RTL（CPU_MODE=5）~~ 🆕 ✅ 已完成：forwarding + load-use stall + branch/JAL/JALR flush + hazard_test.hex
-8. **C** 上板验证 LED/数码管显示。（当前任务 🔴）
-9. **B** 扩展 LW/SW/Branch 仿真覆盖。
-10. **B/C** Vivado 综合流水线模式（MODE=5），导出 PPA 数据到 `reports/vivado/`。
-11. **A** 复核所有测试结果，整理 PPA 数据，写报告。
+8. ~~**A** 实现 BTB 动态分支预测 + 12 文档答辩数据体系~~ 🆕 ✅ 已完成：16条目2-bit + 流水线集成 + MMIO统计 + 6性能文档 + 6补充图表
+9. **C** 上板验证 LED/数码管显示。（当前任务 🔴）
+10. **B** 扩展 LW/SW/Branch 仿真覆盖。
+11. **B/C** Vivado 综合流水线模式（MODE=5），导出 PPA 数据到 `reports/vivado/`。
+12. **A** 复核所有测试结果，整理 PPA 数据，写报告。
 
 ## 关键新文档（必读）
 
@@ -242,6 +244,7 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 | `docs/design/memory_map.md` | 统一总线版地址映射（`0xFFFF_FCxx`外设区 + `addr[9:4]`二级译码） | B/C/D |
 | `docs/planning/optimization_roadmap.md` 🆕 | 拓展方向可行性分析 + PPA资源预算 + 六方向推荐优先级 + 一周优化路线图 + 答辩主线建议 | 全员 |
 | `docs/ai_logs/ai_declaration.md` 🆕 | AI辅助工具使用声明表（教师要求）：15个模块改造说明+独立设计占比+学术诚信承诺 | 全员 |
+| `reports/tables/` 🆕 | 12 文档答辩数据体系：性能总览/CPI分解/资源利用/加速比/前后对比/性能图表/冒险分析/分支预测/PPA估计等 | 全员 |
 | `docs/planning/compliance_check_report.md` 🆕 | Vivado 2018.3代码兼容性 + 课程三级对齐 + 板级约束终检 + 问题清单与修复建议 | 全员 |
 
 ## 开发前规则
