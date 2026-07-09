@@ -115,24 +115,31 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 
 - 已从老师资料中确认 Minisys 主约束来源，并整理为 `constraints/minisys.xdc`。
 - 板级端口统一为 `clk/rst_n/sw[15:0]/led[15:0]/seg[7:0]/an[7:0]`。
+- 四个参考仓库 `.xdc` 交叉验证 50 引脚 100% 一致。
 - 约束审计见 `docs/design/board_constraints_audit.md` 和 `docs/hardware/minisys_pinout.md`。
-- 当前尚未在 Vivado 2018.3 中综合/实现验证，bitstream 通过后才能把上板任务标为 DONE。
+- ✅ **Vivado 2018.3 综合/实现/bitstream 全部通过**（2026-07-09，B 执行）：WNS=+7.212ns, TNS=0, WHS=+0.241ns, THS=0, DRC=0。
+- ✅ 配置电压约束已补充：`CFGBVS VCCO` + `CONFIG_VOLTAGE 3.3`。
+- 🔄 待上板实测：P20 复位按钮极性。
 
 ## 当前项目状态
 
 - ✅ 文档已冻结：`docs/design/isa.md`、`docs/design/memory_map.md`、`docs/design/interfaces.md`、`docs/design/board_demo.md`。
-- ✅ Minisys 主线约束已整理到 `constraints/minisys.xdc`。
+- ✅ Minisys 主线约束已整理到 `constraints/minisys.xdc`，配置电压约束已补充。
 - ✅ 板级端口已统一，`minisys_top` 对外端口与 `.xdc` 保持一致。
-- ✅ **四仓库深度合并已完成**：总线系统 / 存储器 / 外设 / RV32I多周期CPU / MAC / 性能计数器 RTL 已就位。
+- ✅ **四仓库深度合并已完成**：总线系统 / 存储器 / 外设 / RV32I多周期CPU / MAC / 性能计数器 RTL 已就位（25 个文件）。
 - ✅ 合并方案文档：`docs/planning/four_repo_deep_merge_plan.md`。
-- 🔄 待验证：Vivado xsim 仿真、综合、实现、bitstream、上板演示。
+- ✅ **xsim 仿真全部通过**（B+C）：4 个 testbench（ALU/regfile/control/CPU basic）全部 PASS。
+- ✅ **Vivado 2018.3 综合/实现/bitstream 全部通过**（B）：100MHz 时序充裕，DRC=0。
+- ✅ **RTL 综合阻断 bug 已修复**（A+C）：`pc_reg.v` wire→reg、`$clog2` 双版本兼容、include 路径、缺失模块补齐、ifdef 默认值修正。
+- ✅ Vivado 2017.4 / 2018.3 双版本兼容性验证通过。
+- 🔄 待完成：上板 LED/数码管演示（C）、MAC/性能计数器测试（D）、LW/SW/Branch 扩展仿真（B）、PPA 数据导出。
 
 ## B/C/D 队友快速开始（四仓库深度合并后更新 ⭐）
 
 > **重要**：组长A已完成统一总线架构、RV32I多周期FSM CPU、MAC单元、性能计数器和全部外设的 RTL 代码（24个文件）。
 > B/C/D 当前职责从"从零开发"转变为"**验证 + 调试 + 扩展**"。
 
-### B 张淇：CPU xsim 仿真验证（当前最紧急）
+### B 张淇：CPU xsim 仿真验证 ✅ 已完成 → 扩展测试 + Vivado 数据导出
 
 先读：
 
@@ -145,15 +152,17 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 
 当前任务：
 
-1. **tb_alu.v**：验证7类ALU运算（ADD/SUB/AND/OR/XOR/SLL/SRL/SRA/SLT/SLTU）
-2. **tb_regfile.v**：验证x0=0、3读1写、内部前推、MAC第三读口
-3. **tb_control_unit.v**：验证32条指令（31 RV32I + MAC）的译码
-4. **tb_cpu_basic.v**：加载 `sim/programs/basic_test.hex`，验证多周期FSM到EBREAK
-5. `tests/load_store/` 和 `tests/branch/` 的 LW/SW/BEQ/BNE 测试
+1. ~~**tb_alu.v**~~ ✅ 已完成（12个测试向量全部通过）
+2. ~~**tb_regfile.v**~~ ✅ 已完成（x0=0、3读1写、内部前推全部通过）
+3. ~~**tb_control_unit.v**~~ ✅ 已完成（32条指令译码全部通过）
+4. ~~**tb_cpu_basic.v**~~ ✅ 已完成（CPU HALTED, debug_pc=0x20, 结果正确）
+5. ~~Vivado synthesis/implementation/bitstream~~ ✅ 已完成（WNS=7.212ns, TNS=0, DRC=0）
+6. **当前任务**：扩展 `tests/load_store/` 和 `tests/branch/` 的 LW/SW/BEQ/BNE 测试
+7. **当前任务**：导出 Vivado utilization/timing 截图到 `reports/vivado/`
 
 **禁止**：不要改 memory map、不要改 MAC 语义、不要改 C/D 的模块。
 
-### C 胡文龙：Vivado 工程 + 上板验证
+### C 胡文龙：上板验证 🔴 当前重点
 
 先读：
 
@@ -166,12 +175,12 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 
 当前任务：
 
-1. Vivado 2018.3 中建立工程，添加全部 24 个 RTL 源文件 + `constraints/minisys.xdc`
-2. 实测 P20 复位按钮极性
-3. 验证 `soc_top` 全系统集成仿真
-4. Synthesis → Implementation → Bitstream
-5. 上板：LED 状态显示 + 数码管 result/cycle_count 显示
-6. 导出 utilization/timing 截图到 `reports/vivado/`
+1. ~~Vivado 工程建立 + RTL 源文件添加~~ ✅ B 已完成（Vivado 2018.3）
+2. ~~验证 `soc_top` 全系统集成仿真~~ ✅ xsim 通过（B+C 均确认）
+3. ~~Synthesis → Implementation → Bitstream~~ ✅ B 已完成（WNS=7.212ns, DRC=0）
+4. **当前任务 🔴**：实测 P20 复位按钮极性
+5. **当前任务 🔴**：上板：LED 状态显示 + 数码管 result/cycle_count 显示
+6. Vivado 2017.4 用户注意：batch 模式综合在 Win11 上有 IPC 兼容性 bug（`TclStackFree` 崩溃），建议使用 **GUI 模式**或对 `vivado.exe` 设置 **Windows 7 兼容模式**
 
 **禁止**：不要改 CPU 译码、不要改 MAC 接口、不要改 regfile 第三读口。
 
@@ -204,16 +213,18 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 - 参考仓库（`参考仓库/`）已包含6个完整项目代码，可作为实现细节参考。
 - Nexys4DDR、TEC-PLUS、EGO1、ISE14.7、WiFi、蓝牙、电机、触摸屏资料不用于当前主线。
 
-## 下一步顺序（四仓库合并后）
+## 下一步顺序（当前阶段 ⭐）
 
-1. **B** 编写 `tb_alu.v`、`tb_regfile.v`、`tb_control_unit.v`，在 xsim 下单元验证 CPU 核心模块。
-2. **C** 在 Vivado 2018.3 中建立最小工程，添加全部 RTL 源文件和 `.xdc`，实测 P20 复位极性。
-3. **B** 编写 `tb_cpu_basic.v`，加载 `basic_test.hex`，验证多周期 FSM 全流程。
-4. **C** 跑 Vivado synthesis/implementation/bitstream，保存截图。
-5. **C** 上板验证 LED/数码管显示。
-6. **D** 编写 MAC/性能计数器 testbench，准备点积测试程序。
+1. ~~**B** 编写 `tb_alu.v`、`tb_regfile.v`、`tb_control_unit.v`，在 xsim 下单元验证 CPU 核心模块。~~ ✅ 已完成
+2. ~~**C** 在 Vivado 2018.3 中建立最小工程，添加全部 RTL 源文件和 `.xdc`，实测 P20 复位极性。~~ ✅ B 已完成工程搭建
+3. ~~**B** 编写 `tb_cpu_basic.v`，加载 `basic_test.hex`，验证多周期 FSM 全流程。~~ ✅ 已完成
+4. ~~**B** 跑 Vivado synthesis/implementation/bitstream，保存截图。~~ ✅ 已完成（WNS=7.212ns, TNS=0, DRC=0）
+5. **C** 上板验证 LED/数码管显示。（当前任务 🔴）
+6. **D** 编写 MAC/性能计数器 testbench，准备点积测试程序。（当前任务 🔴）
 7. **D** 对比普通点积和MAC点积的性能数据。
-8. **A** 复核所有测试结果，整理 PPA 数据，写报告。
+8. **B** 扩展 LW/SW/Branch 仿真覆盖。
+9. **C/B** 导出 Vivado utilization/timing 数据到 `reports/vivado/`。
+10. **A** 复核所有测试结果，整理 PPA 数据，写报告。
 
 ## 关键新文档（必读）
 
