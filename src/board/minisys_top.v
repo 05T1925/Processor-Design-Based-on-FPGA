@@ -32,29 +32,9 @@ module minisys_top #(
     wire rst = ~rst_n;
 
 //==========================================================================
-// Simple Heartbeat Placeholder (testing / board verification)
+// Unified SoC Mode
 //==========================================================================
-`ifdef MINISYS_USE_HEARTBEAT
-
-    reg [23:0] heartbeat_cnt;
-
-    always @(posedge clk) begin
-        if (rst) begin
-            heartbeat_cnt <= 24'd0;
-        end else begin
-            heartbeat_cnt <= heartbeat_cnt + 24'd1;
-        end
-    end
-
-    // Show heartbeat on LED[7], display switch state on LED[7:0]
-    assign led = {heartbeat_cnt[23], 7'h00, sw[7:0]};
-    assign seg = 8'hFF;
-    assign an  = 8'hFF;
-
-//==========================================================================
-// Unified SoC Mode (default)
-//==========================================================================
-`else
+`ifdef MINISYS_USE_SOC_TOP
 
     // Clock and reset
     wire sys_clk  = clk;
@@ -89,6 +69,24 @@ module minisys_top #(
     assign seg = soc_seg_cat;
     assign an  = soc_seg_an;
 
+//==========================================================================
+// Simple Heartbeat Placeholder (testing / board verification)
+//==========================================================================
+`else
+    reg [23:0] heartbeat_cnt;
+
+    always @(posedge clk) begin
+        if (rst) begin
+            heartbeat_cnt <= 24'd0;
+        end else begin
+            heartbeat_cnt <= heartbeat_cnt + 24'd1;
+        end
+    end
+
+    // Show heartbeat on LED[7], display switch state on LED[7:0]
+    assign led = {heartbeat_cnt[23], 7'h00, sw[7:0]};
+    assign seg = 8'hFF;
+    assign an  = 8'hFF;
 `endif
 
 endmodule
