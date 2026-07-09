@@ -464,3 +464,54 @@
   - 本报告是明早实验室前的最后一次全面检查
   - 报告中列出的4项已知注意事项需要C在Vivado综合后逐项确认
   - MAC时序边界问题是唯一可能影响进度的技术风险
+
+### 记录编号：AI-20260709-02
+
+- 日期：2026-07-09
+- 成员：张淇
+- 负责模块：Vivado implementation/bitstream 验证、板级下载前检查、GitHub 上传前仓库清理与日志补录
+- 工具：Codex
+- 使用阶段：
+  - 在 Vivado 2018.3 中确认 `impl_1` 报告打开方式、运行状态与 implementation 流程
+  - 辅助读取 `timing_summary`、`report_drc`、bitstream 生成结果，判断是否满足上板条件
+  - 根据 DRC warning 补充配置电压约束，重新实现并复核结果
+  - 在准备上传 GitHub 前，辅助审核仓库内容、整理 `.gitignore`、补充 README 中的工程重建说明
+  - 按组内 AI 使用要求补记当日 AI 使用日志
+- 涉及文件：
+  - 约束：`constraints/minisys.xdc`
+  - 文档：`README.md`、`.gitignore`、`docs/ai_logs/ai_usage_log.md`
+  - 实现产物（仅用于检查，不提交）：`processor_fpga/processor_fpga.runs/impl_1/minisys_top_timing_summary_routed.rpt`、`processor_fpga/processor_fpga.runs/impl_1/minisys_top_drc_routed.rpt`、`processor_fpga/processor_fpga.runs/impl_1/minisys_top.bit`
+- 提示词摘要：要求 Codex 根据 Vivado 报告逐步判断 implementation 是否真正完成、时序是否通过、DRC warning 是否需要处理、bitstream 是否成功生成；随后协助检查哪些文件适合上传 GitHub，完善 `.gitignore` 与 README 中的工程重建说明，并补写成员 B 当日 AI 使用日志。
+- AI 输出摘要：
+  - 指导在 `Reports` / `Design Runs` 中确认 `impl_1_route_report_timing_summary_0` 的可打开条件，识别 “报告存在但 implementation 尚未开始” 的情况
+  - 读取 routed timing summary 后，判断 `WNS=7.212ns`、`TNS=0`、`WHS=0.241ns`、`THS=0`，确认 100MHz 约束下 setup/hold 均通过
+  - 读取 routed DRC 后，识别唯一 warning `CFGBVS-1`，建议在 `constraints/minisys.xdc` 中补充 `CFGBVS` 与 `CONFIG_VOLTAGE`
+  - 在约束文件中补入配置电压属性后，重新实现并确认 `Violations found: 0`
+  - 指导 bitstream 生成流程，确认 `Bitstream Generation successfully completed`
+  - 审核仓库结构后，重写 `.gitignore` 以屏蔽 `.runs/.sim/.bit/.dcp` 等 Vivado 产物，并在 `README.md` 增加 “Vivado 工程重建” 说明
+- 人工审阅内容：
+  - 人工核对 timing summary 中最关键的 `WNS/TNS/WHS/THS` 数值，确认不能把 “报告列表存在” 误判成 “implementation 已完成”
+  - 人工核对 DRC 中 `CFGBVS-1` 的说明，确认该问题属于配置电压 warning，而非功能错误或致命 DRC
+  - 人工确认 `constraints/minisys.xdc` 中新增的 `CFGBVS VCCO` 与 `CONFIG_VOLTAGE 3.3` 与 Minisys 板卡常用配置一致
+  - 人工确认 `.gitignore` 调整后不会误忽略源码、约束和文档，只屏蔽工具生成物
+  - 人工确认 README 新增工程重建说明与当前仓库实际组织方式一致
+- 人工修改内容：
+  - 人工确认并保留 `constraints/minisys.xdc` 中新增的：
+    - `set_property CFGBVS VCCO [current_design]`
+    - `set_property CONFIG_VOLTAGE 3.3 [current_design]`
+  - 对 `.gitignore` 中 Vivado 生成物忽略项和本地参考资料目录忽略项进行人工复核
+  - 对 README 中 “Vivado 工程重建” 小节的表述进行人工确认，确保与当前不提交 `.xpr/.runs/.sim` 的策略匹配
+- 验证方式：
+  - 在 Vivado 2018.3 中重新运行 implementation 与 bitstream generation
+  - 人工阅读 `timing summary` 与 `report_drc`
+  - 查看 bitstream 生成完成提示
+  - 通过 `git status` / `git diff` 检查准备上传 GitHub 的文件集合
+- 验证结果：
+  - implementation 完成，时序通过：`WNS=7.212ns`，`TNS=0`，`WHS=0.241ns`，`THS=0`
+  - routed DRC 在补充配置电压约束后变为 `Violations found: 0`
+  - bitstream 生成成功，`minisys_top.bit` 已产出
+  - GitHub 上传前确认仅保留源码、约束、必要文档，不上传 Vivado 临时工程和实现产物
+- 是否合并：已合并到本地 Git，推送过程经人工处理远端同步后完成
+- 备注：
+  - 本条记录仅覆盖成员 B 在 2026-07-09 当天实际使用 AI 辅助完成的 implementation 判读、bitstream 检查、仓库清理与日志补录工作
+  - Vivado 生成目录和 `.bit` 文件仅用于本地验证，不作为仓库长期跟踪文件
