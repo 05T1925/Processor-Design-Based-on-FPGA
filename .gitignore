@@ -43,6 +43,7 @@ sim/wave/*
 # Generated reports kept out of git unless copied in intentionally
 reports/vivado/*
 !reports/vivado/.gitkeep
+!reports/vivado/README.md
 
 # Local reference material or large temporary board packages
 install_packages/

@@ -2,7 +2,7 @@
 
 用途：定义 MAC 指令语义、编码、数据通路接入、控制信号、测试方式和降级方案。
 
-最后更新时间：2026-07-06
+最后更新时间：2026-07-09（D：完成单元与点积验证）
 
 ## 1. 设计动机
 
@@ -44,6 +44,9 @@ opcode = 0001011
 ```
 
 `opcode=0001011` 是 RISC-V custom-0，不与标准 RV32I 基础指令冲突。
+
+译码器必须同时检查 opcode、funct3 和 funct7。仅 opcode 匹配但 funct3/funct7
+错误的指令必须产生 `illegal_instr`，且不得写寄存器或增加性能计数。
 
 ## 4. Regfile 第三读口
 
@@ -168,3 +171,15 @@ x31 = x31 + rs1 * rs2
 - 周期数和 CPI 对比。
 - Vivado DSP 使用截图。
 - PPA 权衡说明。
+
+## 12. 2026-07-09 验证结果
+
+- `tb_mac.v` 覆盖正数、0、有符号负数、低 32 位、累加回绕和连续累加。
+- CPU 级测试确认 MAC 写回 `rd`，`mac_count` 每条合法 MAC 只加 1。
+- 普通点积和 MAC 点积结果均为 70。
+- 普通版本：62 cycles、15 instret、0 MAC。
+- MAC 版本：54 cycles、13 instret、4 MAC。
+- 周期下降 12.90%，speedup=1.1481。
+
+详细数据见 `reports/tables/perf_comparison.md`。当前结果由 Icarus Verilog
+复现，仍需在 Vivado 2018.3 xsim 中补正式截图。

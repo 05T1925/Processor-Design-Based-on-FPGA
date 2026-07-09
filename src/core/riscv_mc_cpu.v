@@ -25,7 +25,12 @@ module riscv_mc_cpu (
     output wire [31:0] debug_pc,
     output wire [7:0]  debug_state,
     output wire [31:0] debug_x10,
-    output wire        debug_illegal
+    output wire        debug_illegal,
+
+    // Performance counters
+    output wire [31:0] perf_cycle_count,
+    output wire [31:0] perf_instret_count,
+    output wire [31:0] perf_mac_count
 );
 
     localparam S_FETCH      = 3'd0;
@@ -45,7 +50,6 @@ module riscv_mc_cpu (
     reg [31:0] instr;
     reg [31:0] alu_result;
     reg [31:0] mem_rdata;
-    reg        branch_taken;
     reg        halted;
     reg        illegal;
 
@@ -98,7 +102,7 @@ module riscv_mc_cpu (
 
     assign next_pc_val = ctrl_jump_reg ? jalr_target :
                          ctrl_jump     ? jal_target  :
-                         branch_taken  ? br_target   :
+                         is_branch_instr && br_taken ? br_target :
                                          pc_plus_4;
 
     control_unit u_control (
@@ -187,7 +191,7 @@ module riscv_mc_cpu (
 
     assign wb_data = (ctrl_wb_sel == WB_MEM) ? mem_rdata  :
                      (ctrl_wb_sel == WB_PC4) ? pc_plus_4  :
-                     (ctrl_wb_sel == WB_MAC) ? mac_result :
+                     (ctrl_wb_sel == WB_MAC) ? alu_result :
                                                alu_result;
 
     assign ibus_addr = pc;
@@ -204,8 +208,19 @@ module riscv_mc_cpu (
     assign debug_x10     = rs1_data;
     assign debug_illegal = illegal;
 
-    assign perf_instret_pulse = ctrl_instret_pulse && (state == S_WRITEBACK);
+    // Retire each legal instruction exactly once in its final execution state.
+    // Register-writing instructions retire in WRITEBACK, stores in MEMORY, and
+    // branches in EXECUTE. EBREAK and illegal instructions never assert the
+    // decoder's instret pulse.
+    assign perf_instret_pulse = ctrl_instret_pulse &&
+                                (((state == S_WRITEBACK) && ctrl_reg_write) ||
+                                 ((state == S_MEMORY) && ctrl_mem_write) ||
+                                 ((state == S_EXECUTE) && is_branch_instr));
     assign perf_mac_pulse     = ctrl_mac_pulse && (state == S_WRITEBACK);
+
+    assign perf_cycle_count   = cycle_cnt;
+    assign perf_instret_count = instret_cnt;
+    assign perf_mac_count     = mac_cnt;
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -214,7 +229,6 @@ module riscv_mc_cpu (
             instr        <= `RV_NOP;
             alu_result   <= `ZERO_WORD;
             mem_rdata    <= `ZERO_WORD;
-            branch_taken <= `FALSE;
             halted       <= `FALSE;
             illegal      <= `FALSE;
         end else begin
@@ -239,11 +253,6 @@ module riscv_mc_cpu (
                         alu_result <= mac_result;
                     else
                         alu_result <= alu_out;
-
-                    if (is_branch_instr)
-                        branch_taken <= br_taken;
-                    else
-                        branch_taken <= `FALSE;
 
                     if (!(ctrl_mem_read || ctrl_mem_write || ctrl_reg_write))
                         pc <= next_pc_val;

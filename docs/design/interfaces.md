@@ -2,7 +2,7 @@
 
 用途：作为四人小组后续分模块开发的接口标准。公共接口变更必须先更新本文档。
 
-最后更新时间：2026-07-07
+最后更新时间：2026-07-09（D：接通性能计数器导出与 MMIO）
 
 ## 1. 全局信号规范
 
@@ -102,6 +102,16 @@
 
 ## 9. `instr_mem` / `data_mem` 接口
 
+`riscv_mc_cpu`、`riscv_mc_wrapper` 和 `cpu_top` 逐层导出以下只读性能信号：
+
+| 端口 | 方向 | 宽度 | 说明 |
+|---|---|---:|---|
+| `perf_cycle_count` | output | 32 | CPU 未停机周期数 |
+| `perf_instret_count` | output | 32 | 已退休合法指令数 |
+| `perf_mac_count` | output | 32 | 已完成合法 MAC 数 |
+
+`CPU_MODE != 0` 的占位模式当前将三个输出置 0。
+
 `instr_mem`：
 
 | 端口 | 方向 | 宽度 | 说明 |
@@ -171,10 +181,12 @@ module soc_top #(
 ```
 
 内部集成：CPU（通过cpu_top选择器） + inst_ram + bus_decoder + data_ram + 外设 + bus_mux。
+性能计数器通过 `0xFFFF_FCB0/FCB4/FCB8` 只读 MMIO 暴露，写请求被忽略。
 
 ## 13. `minisys_top` 板级接口（四仓库深度合并后实现）
 
-`minisys_top.v` 通过 `ifdef MINISYS_USE_SOC_TOP` 切换统一 SoC 模式和心跳占位模式。
+`minisys_top.v` 默认使用统一 SoC；只有显式定义
+`MINISYS_USE_HEARTBEAT` 时才切换到心跳占位模式。
 
 ```verilog
 module minisys_top #(

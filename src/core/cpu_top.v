@@ -36,7 +36,11 @@ module cpu_top #(
     input  wire        dbus_error,
 
     output wire [31:0] debug_pc,
-    output wire [7:0]  debug_state
+    output wire [7:0]  debug_state,
+
+    output wire [31:0] perf_cycle_count,
+    output wire [31:0] perf_instret_count,
+    output wire [31:0] perf_mac_count
 );
 
     generate
@@ -61,7 +65,10 @@ module cpu_top #(
                 .dbus_ready     (dbus_ready),
                 .dbus_error     (dbus_error),
                 .debug_pc       (debug_pc),
-                .debug_state    (debug_state)
+                .debug_state    (debug_state),
+                .perf_cycle_count   (perf_cycle_count),
+                .perf_instret_count (perf_instret_count),
+                .perf_mac_count     (perf_mac_count)
             );
 
         //======================================================================
@@ -87,6 +94,9 @@ module cpu_top #(
                 .debug_pc       (debug_pc),
                 .debug_state    (debug_state)
             );
+            assign perf_cycle_count   = 32'b0;
+            assign perf_instret_count = 32'b0;
+            assign perf_mac_count     = 32'b0;
 
         //======================================================================
         // Mode 2-4: MIPS modes (placeholder - use minisys_unified wrappers)
@@ -102,6 +112,9 @@ module cpu_top #(
             assign dbus_en       = 1'b0;
             assign debug_pc      = 32'b0;
             assign debug_state   = 8'b0;
+            assign perf_cycle_count   = 32'b0;
+            assign perf_instret_count = 32'b0;
+            assign perf_mac_count     = 32'b0;
         end
     endgenerate
 

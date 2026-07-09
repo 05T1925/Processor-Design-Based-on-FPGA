@@ -50,15 +50,15 @@ DONE          →  已完成
 
 | 优先级 | 任务 | 负责人 | 路径 | 依赖 | 完成标准 | 状态 |
 |---|---|---|---|---|---|---|
-| P1 | mac_unit 单元测试 | D | `sim/tb/tb_mac.v` | mac_unit代码 | 单测覆盖正数/0/溢出/累加 | TODO |
-| P1 | perf_counter 单元测试 | D | `sim/tb/tb_perf_counter.v` | csr_perf_counter代码 | cycle/instret/mac计数正确 | TODO |
-| P1 | 普通点积测试程序 | D | `tests/mac/` | CPU xsim通过 | 手写RV32I点积程序 | TODO |
-| P1 | MAC 点积测试程序 | D | `tests/mac/` | CPU xsim通过+MAC | 使用MAC指令的点积程序 | TODO |
-| P1 | 点积对比：result+cycle+CPI | D | `reports/tables/` | 点积测试完成 | result一致，周期可比较 | TODO |
+| P1 | mac_unit 单元测试 | D | `sim/tb/tb_mac.v` | mac_unit代码 | Icarus通过；Vivado xsim截图待补 | **IN_PROGRESS** |
+| P1 | perf_counter 单元测试 | D | `sim/tb/tb_perf_counter.v` | csr_perf_counter代码 | Icarus通过；Vivado xsim截图待补 | **IN_PROGRESS** |
+| P1 | 普通点积测试程序 | D | `tests/mac/` | CPU仿真通过 | result=70，cycle=62，instret=15 | **IN_PROGRESS** |
+| P1 | MAC 点积测试程序 | D | `tests/mac/` | CPU仿真通过+MAC | result=70，cycle=54，instret=13，mac=4 | **IN_PROGRESS** |
+| P1 | 点积对比：result+cycle+CPI | D | `reports/tables/` | 点积测试完成 | 表格已生成；xsim正式数据待补 | **IN_PROGRESS** |
 | P1 | Vivado utilization/timing 导出 | B/C | `reports/vivado/` | bitstream生成 | 有截图或报告 | **IN_PROGRESS** |
-| P1 | PPA 表格初稿 | D | `reports/tables/` | Vivado数据 | LUT/FF/BRAM/DSP/Timing字段完整 | TODO |
+| P1 | PPA 表格初稿 | D | `reports/tables/` | 完整SoC Vivado数据 | 模板完成；现有heartbeat报告无效，待重跑 | **IN_PROGRESS** |
 | P1 | RV32I单周期wrapper接入 | A | `src/core/riscv_sc_wrapper.v` | 参考riscv-minisys-cpu | 占位已创建，P1填入真实逻辑 | **IN_PROGRESS** |
-| P1 | 性能计数器MMIO暴露 | D | `src/soc/soc_top.v`修改 | perf_counter验证通过 | MMIO可读性能计数器值 | TODO |
+| P1 | 性能计数器MMIO暴露 | D | `src/soc/soc_top.v`修改 | perf_counter验证通过 | Icarus读回cycle/instret/mac通过，xsim待补 | **IN_PROGRESS** |
 | P1 | LW/SW xsim 仿真 | B | `sim/tb/`、`tests/load_store/` | CPU basic通过 | 访存指令正确 | TODO |
 | P1 | BEQ/BNE xsim 仿真 | B | `sim/tb/`、`tests/branch/` | CPU basic通过 | 6种分支条件正确 | TODO |
 
@@ -80,7 +80,7 @@ DONE          →  已完成
 | A 刘文涛 | ✅ 6仓库分析选型 + 24 RTL生成 + 文档同步 + 合规检查报告 + 7处RTL修复（pc_reg/$clog2/include路径/riscv_sc_wrapper/ifdef） | 文档同步更新、AI日志维护 | RV32I单周期wrapper实现、集成测试复核 |
 | B 张淇 | ✅ 4个testbench（ALU/regfile/control/CPU basic）全部xsim通过 + Vivado工程搭建 + Synthesis/Implementation/Bitstream全部通过（WNS=7.212ns, TNS=0, DRC=0）+ 约束电压配置修复 | Vivado utilization/timing数据导出 | LW/SW/branch仿真、CPU周期记录 |
 | C 胡文龙 | ✅ xsim全系统仿真验证通过 + 3处RTL bug诊断（pc_reg/$clog2/路径）+ Vivado 2017.4兼容性深度诊断 | 🔴 上板LED/数码管验证 | 上板演示录像/照片、UART（P2） |
-| D 王博生 | — | 🔴 MAC/perf_counter testbench | 点积测试程序、PPA初稿 |
+| D 王博生 | ✅ MAC/perf单测、两版点积、计数器MMIO的Icarus验证 | 🔴 补Vivado xsim截图与完整SoC PPA | 配合B/C重跑完整SoC综合 |
 
 ## 6. Git 提交节点（已完成 → 待完成）
 

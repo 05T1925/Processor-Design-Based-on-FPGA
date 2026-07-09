@@ -2,7 +2,7 @@
 
 用途：定义性能计数器、点积对比方法、Vivado 报告字段和最终报告表格。
 
-最后更新时间：2026-07-06
+最后更新时间：2026-07-09（D：完成计数链路、MMIO与点积辅助仿真）
 
 ## 1. 为什么需要性能计数
 
@@ -20,6 +20,13 @@
 | `cycle_count` | CPU 未 HALT 时每个时钟周期 |
 | `instret_count` | 一条指令完成/退休 |
 | `mac_count` | MAC 指令完成 |
+
+退休状态约定：
+
+- ALU、LOAD、JUMP、MAC：WRITEBACK 退休。
+- STORE：MEMORY 退休。
+- BRANCH：EXECUTE 退休。
+- EBREAK 和非法指令不计入 `instret_count`。
 
 第一版建议 HALT 后停止 `cycle_count`，方便上板显示稳定结果。
 
@@ -84,9 +91,13 @@ speedup = normal_cycle_count / mac_cycle_count
 
 | 版本 | 周期数 | 指令数 | CPI | LUT | FF | BRAM | DSP | Timing Slack | 说明 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| 基础 CPU | 待填 | 待填 | 待填 | 待填 | 待填 | 待填 | 待填 | 待填 | 多周期 FSM |
-| 基础 CPU + MAC | 待填 | 待填 | 待填 | 待填 | 待填 | 待填 | 待填 | 待填 | MAC 点积 |
+| 普通 RV32I 点积 | 62 | 15 | 4.1333 | 待填 | 待填 | 待填 | 待填 | 待填 | result=70 |
+| MAC 点积 | 54 | 13 | 4.1538 | 待填 | 待填 | 待填 | 待填 | 待填 | result=70, mac=4 |
 | 流水线冲刺版 | 待填 | 待填 | 待填 | 待填 | 待填 | 待填 | 待填 | 待填 | 可选 |
+
+当前仓库已有的 2 LUT、24 FF、0 BRAM、0 DSP 报告对应 heartbeat 占位电路，
+不能作为完整 SoC/MAC 的 PPA 数据。正式表见
+`reports/tables/ppa_comparison.md`，等待完整 SoC 重新综合。
 
 ## 9. 报告截图清单
 

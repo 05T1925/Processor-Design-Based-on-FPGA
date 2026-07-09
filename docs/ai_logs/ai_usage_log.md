@@ -653,3 +653,47 @@
   - 本记录覆盖 A 在 2026-07-09 的文档审计和修正工作，属于项目管理和质量保障类 AI 使用，不涉及 RTL 设计变更
   - 根本原因：早期 AI（Codex）在生成文档时可能基于训练数据中的 GitHub 用户名（z0gSh1u/Yuqifan1117）虚构了两个独立仓库名，实际均为 SEU minisys 项目
   - RTL 头注释的修改仅涉及注释文本，不影响功能
+
+### 记录编号：AI-20260709-D01
+
+- 日期：2026-07-09
+- 成员：王博生
+- 负责模块：MAC、性能计数器、点积对比、性能计数器 MMIO
+- 工具：Codex
+- 使用阶段：D 成员 P1 RTL 验证、系统集成和结果归档
+- 涉及文件：
+  - RTL：`src/core/control_unit.v`、`src/core/riscv_mc_cpu.v`、
+    `src/core/riscv_mc_wrapper.v`、`src/core/cpu_top.v`、`src/soc/soc_top.v`
+  - Testbench：`sim/tb/tb_mac.v`、`sim/tb/tb_perf_counter.v`、
+    `sim/tb/tb_perf_integration.v`、`sim/tb/tb_dot_product.v`、
+    `sim/tb/tb_perf_mmio.v`
+  - 程序：`tests/mac/`、`tests/perf/`
+  - 结果：`reports/tables/`、`reports/vivado/README.md`
+- 提示词摘要：按成员 D 的批准计划完成 MAC/perf 单测、普通与 MAC 点积、
+  cycle/instret/mac 量化、性能计数器 MMIO 和结果表格，并优先推送 GitHub。
+- AI 输出摘要：
+  - 新增 MAC 与性能计数器自检查 testbench。
+  - 严格校验 MAC funct3/funct7。
+  - 修复 MAC 写回组合环、taken branch 使用旧值、STORE/BRANCH 退休漏计。
+  - 接通 `0xFFFF_FCB0/FCB4/FCB8` 三个只读计数器 MMIO。
+  - 两版点积均得到 70；普通版 62 cycle/15 instret，MAC 版
+    54 cycle/13 instret/4 MAC，speedup=1.1481。
+  - 识别现有 2 LUT/24 FF Vivado 报告为 heartbeat 占位电路结果，未冒充
+    完整 SoC PPA。
+- 人工审阅点：
+  - MAC 编码与 `docs/design/isa.md` 一致。
+  - 普通点积未使用当前 ISA 不支持的 MUL。
+  - 性能计数规则保证每条合法指令只退休一次。
+  - PPA 表只记录可追溯数据，缺失项保留 BLOCKED。
+- 验证方式：
+  - Icarus Verilog 运行单元与 SoC 集成测试。
+  - Verilator 对 `soc_top` 执行 lint，确认无 error 和组合环。
+- 验证结果：
+  - MAC/perf 单测通过。
+  - 退休计数集成测试通过：cycle=33、instret=8、mac=1。
+  - 点积测试通过：normal=70/62/15/0，MAC=70/54/13/4。
+  - MMIO 测试通过：cycle snapshot=23、instret snapshot=6、mac=1。
+- 是否合并：待提交
+- 备注：
+  - 本机无 Vivado；正式 xsim 截图和完整 SoC PPA 需要在 Windows +
+    Vivado 2018.3 补测。
