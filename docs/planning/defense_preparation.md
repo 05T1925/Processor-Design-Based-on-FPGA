@@ -503,7 +503,7 @@ rs1_forwarded = EX/MEM.alu_result  (if EX/MEM.rd == ID/EX.rs1)
 |---|---|---|
 | 基础层次 | **100%** | RTL + 仿真 + 综合 + 实现 + bitstream全部完成 |
 | 进阶层次 | **85%** | SoC集成 + perf MMIO + CPI/吞吐量量化评估完成 |
-| 拓展层次 | **85%** | MAC 验证 + 点积对比(speedup=1.1481) + PPA 模板 + **BTB 分支预测** 完成 |
+| 拓展层次 | **95%** | MAC 验证 + 点积对比(speedup=1.1481) + PPA 模板 + **BTB 分支预测** + **12文档答辩数据体系** 完成 |
 
 ### 待完成（🔄）
 

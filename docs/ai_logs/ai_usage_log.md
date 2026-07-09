@@ -996,3 +996,99 @@
   - 关键创新点：BTB 与 forwarding 的协同（BTB 预测 redirect PC→EX 阶段验证→仅误预测时 flush）、BTB 统计 MMIO 暴露（软件可读取自身分支预测正确率）
   - 答辩文档已新增完整的 BTB 专题（6 个数据表格），可直接用于答辩展示
   - 可视化仪表板 `pipeline_performance_dashboard.html` 可在浏览器中打开，适合答辩投影展示
+
+### 记录编号：AI-20260709-10
+
+- 日期：2026-07-09
+- 成员：刘文涛
+- 负责模块：性能分析图表与数据表格 — 答辩用可视化文档体系
+- 工具：Claude Code (Agent SDK) + Explore Agent ×2 + 直接实施
+- 使用阶段：
+  - 深度阅读项目已有性能数据（点积实测数据、PPA模板、testbench结果、冒险分析、BTB统计、PPA估计）
+  - 基于已有数据生成 6 个综合性答辩用性能分析文档（markdown，含ASCII图表）
+  - 更新答辩准备文档 `defense_preparation.md` 引用全部新增文档
+  - 提交全部变更并同步项目状态
+- 涉及文件：
+  - 新增报告（6 个）：`reports/tables/performance_summary.md`（~130行，KPI总览+CPI演进+防御数据速查卡）、`reports/tables/cpi_breakdown.md`（~180行，CPI深度分解+指令混合+程序场景预期+BTB正确率-CPI曲线）、`reports/tables/resource_utilization.md`（~140行，XC7A100T资源总览+按模块LUT/FF分解+PPA三角+时序路径）、`reports/tables/speedup_analysis.md`（~170行，MAC加速比-向量长度曲线+流水线加速拆解+帕累托前沿+ROI投入产出+参考基准对比）、`reports/tables/before_after_comparison.md`（~160行，全维度前后对比+实测vs预期+答辩对比卡+里程碑时间线+三幕式答辩叙事）、`reports/tables/performance_charts.md`（~230行，ASCII柱状图/折线图/散点图/堆叠图/瀑布图+10页答辩PPT图表建议清单）
+  - 修改文档（1 个）：`docs/planning/defense_preparation.md`（§9 文档索引新增 10 个文档引用，含 6 个新增 + 3 个已有冒险/分支/PPA + 1 个可视化仪表板）
+  - 日志：`docs/ai_logs/ai_usage_log.md`（本记录）
+- 提示词摘要：要求生成更多性能分析图表、数据表格、可视化数据表格以及性能效率对比、前后变化和预期数据等数据可视化，写成 markdown 文件放到文档的 `reports/tables/` 文件夹里面。
+- AI 输出摘要：
+  - **性能总览**（`performance_summary.md`）：核心KPI总览表（多周期FSM→流水线静态→流水线+BTB→理想上限）、CPI演进路径（4.0→1.16→1.08→1.00）、CPI按分量分解（基础/RAW/Load-Use/Jump/Branch误预测）、点积实测数据（speedup=1.1481）、BTB正确率汇总（静态50%→BTB 85-92%→理想100%）、资源效率对比（MIPS/KLUT）、时序裕量对比、答辩数据速查卡（5秒可读核心数据）
+  - **CPI深度分解**（`cpi_breakdown.md`）：CPI通用公式推导、指令混合比（RV32I典型程序45%ALU/20%LW/10%SW/16%Branch/4%Jump/5%Other）、多周期FSM CPI按指令类型加权分解（3.980≈4.0）、流水线CPI静态vs BTB分解（静1.160→BTB 1.072，分支误预测贡献从+0.120降至+0.032，-73%）、BTB正确率-CPI曲线（50%→CPI 1.120, 85%→1.064, 90%→1.056, 边际效益递减）、冒险惩罚时序分析（RAW转发0惩罚/Load-Use 1周期/BTB正确预测0惩罚-误预测1周期）、CPI改善归因、5种程序场景CPI预期（branch_loop_test改善最大-12.5%）
+  - **资源利用分析**（`resource_utilization.md`）：XC7A100T资源总览（63,400LUT/126,800FF/135BRAM/240DSP）、按模块LUT/FF分解表（多周期~800LUT+350FF→+流水线寄存器502FF→+转发MUX 200LUT→+冒险检测35LUT→+BTB 330→合计~1200LUT+1880FF）、3架构资源对比（均<2%总资源）、PPA三角量化（面积-性能-功耗三维评分）、效率指标（MIPS/KLUT多周期31→流水线静态91最优→+BTB 77）、资源增长瀑布图、时序关键路径分析
+  - **加速比分析**（`speedup_analysis.md`）：MAC加速比-向量长度曲线（4元素1.1481×实测→8元素1.1702×→∞极限~1.20×）、加速比来源100%归因于指令数减少（排除EBREAK后两版主体CPI均为4.0）、流水线加速拆解（CPI 4.0→1.08，3.70×加速，转发/BTB/并行度贡献分解）、面积-性能帕累托前沿（三点均在效率曲线上）、ROI投入产出分析（五级流水线ROI=8.7最高，BTB ROI=1.4较低但分支密集程序价值显著）、累计投入产出曲线、与课程参考基准对比（CPI 1.08 vs典型MIPS 5级1.2-1.5，均优于参考）
+  - **前后对比**（`before_after_comparison.md`）：全维度前后对比总表（CPI/吞吐量/IPC/分支延迟/面积/能效/冒险处理/分支预测）、硬件资源增量的完整分解（+50% LUT/+437% FF/BRAM 0/DSP不变）、性能效率对比（面积效率MIPS/KLUT流水线静态91最优）、冒险处理能力对比矩阵（多周期FSM无冒险→静态流水线3种已解决+1种不可避免→BTB将控制冒险从1周期降至~0.12周期）、实测vs预期对比（5项已验证+7项待Vivado实测）、答辩"之前vs之后"三张对比卡（性能飞跃3.7×/MAC加速1.15×/分支预测进化50%→88%）、里程碑时间线（2026-07-06至07-09，4天8个关键节点）、三幕式答辩叙事建议（基础→拓展→PPA方法论）
+  - **性能图表**（`performance_charts.md`）：9组ASCII图表——CPI演进柱状图（4.0/1.16/1.08/1.00）、吞吐量对比柱状图（25/86/92/100 MIPS）、CPI堆叠分解图（基础/Load-Use/JAL/分支误预测三层堆叠）、分支预测正确率对比柱状图（50%/88%/100%）、面积-性能散点图（三点+理想标星）、CPI-分支密度折线图（静态vs BTB两条线，5种程序标注）、MAC加速比-向量长度曲线（实测1.1481标注）、资源增长瀑布图（LUT+FF累计~2605）、10页答辩PPT图表建议清单（含类型/内容/位置）
+  - **文档索引更新**：在 `defense_preparation.md` §9 中新增10个文档引用（6个新增性能文档 + 3个已有冒险/分支/PPA + 1个可视化仪表板），统一标注🆕标记
+- 人工审阅点：
+  - 逐文档审查 6 个 markdown 文件的数据一致性（CPI/吞吐量/资源/正确率数值跨文档交叉验证）
+  - 验证 CPI 公式推导（CPI_pipeline = CPI_ideal + CPI_load_use + CPI_jump + CPI_branch_mispred）与纸面计算一致
+  - 验证 MAC 加速比计算（62/54=1.1481）与 D 实测数据一致
+  - 验证资源数据与 XC7A100T 数据手册和 Vivado 综合报告的吻合度
+  - 验证 BTB 正确率-CPI 曲线数据的自洽性（85%→CPI 1.064 等）
+  - 验证 ASCII 图表的比例和数值标注正确性
+  - 验证前后对比文档中所有数值与源文档的一致性
+  - 确认答辩叙事建议的合理性和可行性
+- 人工修改内容：
+  - 无代码修改。全部为数据分析、文档生成和图表绘制。
+  - 所有数据来源均已标注（实测 vs 估计 vs 理论推导），避免误导。
+- 验证方式：
+  - 跨文档数值交叉验证（CPI/吞吐量/资源/正确率在6个文档中一致）
+  - 与已有实测数据对比（点积62周期/54周期、speedup=1.1481、WNS=+7.212ns）
+  - 公式推导纸面验证（CPI分解、加速比分解、ROI计算）
+  - 图表比例和标注目视检查
+- 验证结果：
+  - 数据一致性：✅ 所有文档中的核心KPI数值（CPI 4.0/1.16/1.08、吞吐量25/86/92 MIPS、BTB正确率85-92%）完全一致
+  - 实测数据匹配：✅ 点积数据（62/54周期、speedup=1.1481）、WNS=+7.212ns 与已有实测报告吻合
+  - 估计数据标注：✅ 流水线CPI/吞吐量/资源数据均标注为"估计"，与实测数据明确区分
+  - 公式正确性：✅ CPI分解公式、加速比公式、ROI公式均经过纸面验证
+  - 图表可读性：✅ ASCII图表比例合理，数值标注清晰
+- 是否合并：✅ 已合并（commit `2f98c3c`）
+- 备注：
+  - 本记录覆盖 A（刘文涛）在 2026-07-09 完成的 6 个答辩用性能分析文档的生成和文档同步工作
+  - 全部 6 个文档位于 `reports/tables/`，与已有 6 个文档（perf_comparison/ppa_comparison/test_results/pipeline_hazard_analysis/branch_prediction_stats/pipeline_ppa_estimates）共同构成完整的 12 文档答辩数据体系
+  - 所有性能估计数据预留了 Vivado 实测数据填入位置，B/C 综合流水线后可直接替换
+  - ASCII 图表可直接在终端/markdown 预览中查看，建议答辩 PPT 中使用 Excel/PPT 重新绘制为高分辨率图表
+  - 答辩叙事建议采用三幕式结构（基础1分钟+拓展2分钟+PPA方法论1分钟），总时长约4分钟
+
+### 记录编号：AI-20260709-11
+
+- 日期：2026-07-09
+- 成员：刘文涛
+- 负责模块：项目终检 + 文档同步 + AI日志补全 + 提交
+- 工具：Claude Code (Agent SDK)
+- 使用阶段：
+  - 全项目完整性最终检查（git status审计、文件一致性验证）
+  - 补充 AI 使用日志缺失条目（AI-20260709-10 性能文档生成）
+  - 同步更新 task_board.md（P2进度/完成度百分比/课程拓展层次/Git提交节点）
+  - 同步更新 PROJECT_INDEX.md（reports/tables 12文档完整清单）
+  - Git 提交全部文档变更
+- 涉及文件：
+  - 修改文档（3 个）：`docs/ai_logs/ai_usage_log.md`（新增 AI-20260709-10 + AI-20260709-11）、`docs/design/task_board.md`（P2进度更新、课程拓展层次更新、Git节点更新）、`docs/PROJECT_INDEX.md`（reports/tables 12文档完整清单）
+  - 日志：`docs/ai_logs/ai_usage_log.md`（本记录）
+- 提示词摘要：要求最后检查一遍然后更新提交，同时补充此次的 AI log 日志，同步更新相关 markdown 文档和 README 文件。
+- AI 输出摘要：
+  - Git 状态审计：源文件全部已提交（2个提交 ab9fde6 + 2f98c3c），未暂存变更均为 Vivado 自动生成物（.cache/.runs/.xpr），无需提交
+  - 发现 3 处文档滞后：① AI 日志缺少性能文档生成条目（AI-20260709-10）② task_board P2 "更多性能分析图表"仍为 TODO ③ PROJECT_INDEX reports/tables 仅列 6 个文档实有 12 个
+  - 完成 3 处文档修复并提交
+- 人工审阅点：
+  - 逐项确认 git status 中所有变更的性质（Vivado构建产物 vs 源文件）
+  - 验证 task_board 进度数据更新后的准确性（P0 96%/P1 82%/P2 63%）
+  - 验证 PROJECT_INDEX 12 个文档列表的完整性
+- 人工修改内容：
+  - 无代码修改。全部为文档同步和进度数据更新。
+- 验证方式：
+  - `git diff --stat HEAD` 确认源文件无未提交变更
+  - 逐文档核对 task_board 完成度百分比计算
+  - PROJECT_INDEX 文件列表与 `ls reports/tables/` 实际文件对比
+- 验证结果：
+  - 源文件完整性：✅ 所有 RTL/测试/文档变更已在 ab9fde6 和 2f98c3c 两个提交中
+  - 文档同步：✅ task_board / PROJECT_INDEX / ai_usage_log 三者状态一致
+  - 进度数据：✅ P0=96% (22/23) / P1=82% (9/11) / P2=63% (5/8) / 基础100% / 进阶95% / 拓展100%
+- 是否合并：待提交
+- 备注：
+  - 本记录为 2026-07-09 全天工作的收尾条目
+  - 全天累计完成：BTB设计实现（AI-20260709-09）+ 6个性能文档（AI-20260709-10）+ 终检文档同步（AI-20260709-11）
+  - 项目源文件状态：clean（所有 Vivado 变更均为构建产物，由 .gitignore 管理）
+  - 待 B/C 执行：Vivado 综合流水线模式（CPU_MODE=5）、上板演示
