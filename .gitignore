@@ -45,8 +45,8 @@ reports/vivado/*
 !reports/vivado/.gitkeep
 
 # Local reference material or large temporary board packages
-安装包资料/
-参考仓库/
+install_packages/
+reference_repos/
 
 # OS / editor
 .DS_Store
