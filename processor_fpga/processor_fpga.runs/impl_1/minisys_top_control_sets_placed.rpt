@@ -1,7 +1,7 @@
 Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
 ----------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2018.3 (win64) Build 2405991 Thu Dec  6 23:38:27 MST 2018
-| Date         : Thu Jul  9 11:12:03 2026
+| Date         : Thu Jul  9 18:47:12 2026
 | Host         : 7_Machine running 64-bit major release  (build 9200)
 | Command      : report_control_sets -verbose -file minisys_top_control_sets_placed.rpt
 | Design       : minisys_top
@@ -23,8 +23,8 @@ Table of Contents
 +----------------------------------------------------------+-------+
 |                          Status                          | Count |
 +----------------------------------------------------------+-------+
-| Number of unique control sets                            |     1 |
-| Unused register locations in slices containing registers |     0 |
+| Number of unique control sets                            |    72 |
+| Unused register locations in slices containing registers |    11 |
 +----------------------------------------------------------+-------+
 
 
@@ -34,7 +34,7 @@ Table of Contents
 +--------+--------------+
 | Fanout | Control Sets |
 +--------+--------------+
-|    16+ |            1 |
+|    16+ |           72 |
 +--------+--------------+
 
 
@@ -45,21 +45,92 @@ Table of Contents
 | Clock Enable | Synchronous Set/Reset | Asynchronous Set/Reset | Total Registers | Total Slices |
 +--------------+-----------------------+------------------------+-----------------+--------------+
 | No           | No                    | No                     |               0 |            0 |
-| No           | No                    | Yes                    |               0 |            0 |
-| No           | Yes                   | No                     |              24 |            6 |
+| No           | No                    | Yes                    |              54 |           22 |
+| No           | Yes                   | No                     |               0 |            0 |
 | Yes          | No                    | No                     |               0 |            0 |
-| Yes          | No                    | Yes                    |               0 |            0 |
-| Yes          | Yes                   | No                     |               0 |            0 |
+| Yes          | No                    | Yes                    |             855 |          432 |
+| Yes          | Yes                   | No                     |             992 |          399 |
 +--------------+-----------------------+------------------------+-----------------+--------------+
 
 
 4. Detailed Control Set Information
 -----------------------------------
 
-+----------------+---------------+------------------+------------------+----------------+
-|  Clock Signal  | Enable Signal | Set/Reset Signal | Slice Load Count | Bel Load Count |
-+----------------+---------------+------------------+------------------+----------------+
-|  clk_IBUF_BUFG |               | clear            |                6 |             24 |
-+----------------+---------------+------------------+------------------+----------------+
++----------------+----------------------------------------------------------------------------------------+------------------+------------------+----------------+
+|  Clock Signal  |                                      Enable Signal                                     | Set/Reset Signal | Slice Load Count | Bel Load Count |
++----------------+----------------------------------------------------------------------------------------+------------------+------------------+----------------+
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[20][31]_i_1_n_0 | rst_n_IBUF       |               10 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/mem_rdata                      | rst_n_IBUF       |               26 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[26][31]_i_1_n_0 | rst_n_IBUF       |               11 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[3][31]_i_1_n_0  | rst_n_IBUF       |               19 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[19][31]_i_1_n_0 | rst_n_IBUF       |                7 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[27][31]_i_1_n_0 | rst_n_IBUF       |               10 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[13][31]_i_1_n_0 | rst_n_IBUF       |               13 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[15][31]_i_1_n_0 | rst_n_IBUF       |                9 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[30][31]_i_1_n_0 | rst_n_IBUF       |               16 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[23][31]_i_1_n_0 | rst_n_IBUF       |               13 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[14][31]_i_1_n_0 | rst_n_IBUF       |               10 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[12][31]_i_1_n_0 | rst_n_IBUF       |                9 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[10][31]_i_1_n_0 | rst_n_IBUF       |                9 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[11][31]_i_1_n_0 | rst_n_IBUF       |               11 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[1][31]_i_1_n_0  | rst_n_IBUF       |               13 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[22][31]_i_1_n_0 | rst_n_IBUF       |               12 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[18][31]_i_1_n_0 | rst_n_IBUF       |               11 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[21][31]_i_1_n_0 | rst_n_IBUF       |               10 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/dec_mem_write_reg_1[0]         | rst_n_IBUF       |               16 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[17][31]_i_1_n_0 | rst_n_IBUF       |               11 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[24][31]_i_1_n_0 | rst_n_IBUF       |               17 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[25][31]_i_1_n_0 | rst_n_IBUF       |               12 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[29][31]_i_1_n_0 | rst_n_IBUF       |               13 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[2][31]_i_1_n_0  | rst_n_IBUF       |               12 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[31][31]_i_1_n_0 | rst_n_IBUF       |               15 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[28][31]_i_1_n_0 | rst_n_IBUF       |               15 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[16][31]_i_1_n_0 | rst_n_IBUF       |               12 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[4][31]_i_1_n_0  | rst_n_IBUF       |               15 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[6][31]_i_1_n_0  | rst_n_IBUF       |               17 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[8][31]_i_1_n_0  | rst_n_IBUF       |               17 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[7][31]_i_1_n_0  | rst_n_IBUF       |               16 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[9][31]_i_1_n_0  | rst_n_IBUF       |               17 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/u_regfile/regs[5][31]_i_1_n_0  | rst_n_IBUF       |               17 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/E[0]                           | rst_n_IBUF       |                8 |             32 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/ibus_en                        | rst_n_IBUF       |               16 |             36 |
+|  clk_IBUF_BUFG |                                                                                        | rst_n_IBUF       |               22 |             54 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/dec_rd_addr                    | rst_n_IBUF       |               59 |            120 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[14]_2           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[11]_7           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[13]_1           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[12]_1           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[13]_2           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[12]_6           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[14]_3           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[11]_4           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[13]_4           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[12]_5           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[10]_3           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[11]_3           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[13]_0           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[14]_4           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[12]_7           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[10]_0           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[11]_5           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[12]_2           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[10]_5           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[13]_3           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[10]_4           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[11]_1           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[10]_2           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[12]_3           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[11]_2           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[11]_6           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[12]_0           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[12]_4           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[14]_1           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[13]_5           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[10]_1           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result_reg[11]_0           |                  |               32 |            128 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/alu_result                     | rst_n_IBUF       |              113 |            291 |
+|  clk_IBUF_BUFG | u_soc_top/cpu_top_inst/gen_riscv_mc.riscv_mc_inst/u_cpu/pc                             | rst_n_IBUF       |              194 |            312 |
+|  clk_IBUF_BUFG |                                                                                        |                  |             1408 |           5632 |
++----------------+----------------------------------------------------------------------------------------+------------------+------------------+----------------+
 
 

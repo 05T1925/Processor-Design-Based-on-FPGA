@@ -34,16 +34,8 @@ module regfile (
         end
     end
 
-    assign rs1_data = (rs1_addr == `ZERO_REG) ? `ZERO_WORD :
-                      (reg_write && (rs1_addr == rd_addr)) ? rd_wdata :
-                      regs[rs1_addr];
-
-    assign rs2_data = (rs2_addr == `ZERO_REG) ? `ZERO_WORD :
-                      (reg_write && (rs2_addr == rd_addr)) ? rd_wdata :
-                      regs[rs2_addr];
-
-    assign rd_old_data = (rd_old_addr == `ZERO_REG) ? `ZERO_WORD :
-                         (reg_write && (rd_old_addr == rd_addr)) ? rd_wdata :
-                         regs[rd_old_addr];
+    assign rs1_data = (rs1_addr == `ZERO_REG) ? `ZERO_WORD : regs[rs1_addr];
+    assign rs2_data = (rs2_addr == `ZERO_REG) ? `ZERO_WORD : regs[rs2_addr];
+    assign rd_old_data = (rd_old_addr == `ZERO_REG) ? `ZERO_WORD : regs[rd_old_addr];
 
 endmodule

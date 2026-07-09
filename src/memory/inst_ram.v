@@ -9,7 +9,7 @@
 
 module inst_ram #(
     parameter RAM_SIZE = 32768,         // Size in bytes (32KB default)
-    parameter INIT_FILE = "boot_rom.hex"
+    parameter INIT_FILE = "boot_rom.mem"
 ) (
     input  wire        clk,
     input  wire [31:0] addr,            // Byte address from CPU
@@ -40,10 +40,10 @@ module inst_ram #(
 
     reg [31:0] mem [0:RAM_DEPTH-1];
 
-    // Simulation initialization
-    // initial begin
-    //     $readmemh(INIT_FILE, mem);
-    // end
+    // Initialize program memory from a hex file for simulation and synthesis.
+    initial begin
+        $readmemh(INIT_FILE, mem);
+    end
 
     // CPU read port (combinational)
     wire [ADDR_WIDTH-1:0] cpu_word_addr;

@@ -52,6 +52,24 @@ module riscv_mc_cpu (
     reg [31:0] mem_rdata;
     reg        halted;
     reg        illegal;
+    reg [4:0]  dec_rd_addr;
+    reg [31:0] dec_rs1_data;
+    reg [31:0] dec_rs2_data;
+    reg [31:0] dec_rd_old_data;
+    reg [31:0] dec_imm_val;
+    reg [`ALUOP_BUS]   dec_alu_op;
+    reg [`ALUTYPE_BUS] dec_alu_type;
+    reg                dec_alu_src_imm;
+    reg                dec_reg_write;
+    reg                dec_mem_read;
+    reg                dec_mem_write;
+    reg [1:0]          dec_wb_sel;
+    reg [2:0]          dec_branch_type;
+    reg                dec_jump;
+    reg                dec_jump_reg;
+    reg                dec_is_mac;
+    reg                dec_instret_pulse;
+    reg                dec_mac_pulse;
 
     wire [`ALUOP_BUS]   ctrl_alu_op;
     wire [`ALUTYPE_BUS] ctrl_alu_type;
@@ -77,7 +95,10 @@ module riscv_mc_cpu (
     wire [31:0] imm_val;
     wire [31:0] alu_in_a, alu_in_b;
     wire [31:0] alu_out;
-    wire [31:0] mac_result;
+    // Board bring-up ROM does not execute the custom MAC instruction.
+    // Keep MAC disabled here to avoid the long combinational DSP path while
+    // validating the base CPU, ROM, MMIO, and board I/O flow.
+    wire [31:0] mac_result = `ZERO_WORD;
     wire        alu_zero;
     wire        br_taken;
 
@@ -94,14 +115,14 @@ module riscv_mc_cpu (
     wire        is_branch_instr;
 
     assign pc_plus_4   = pc + 32'd4;
-    assign jal_target  = pc + imm_val;
-    assign br_target   = pc + imm_val;
+    assign jal_target  = pc + dec_imm_val;
+    assign br_target   = pc + dec_imm_val;
     assign jalr_target = {alu_out[31:1], 1'b0};
 
-    assign is_branch_instr = (ctrl_alu_type == `ALUTYPE_JUMP) && !ctrl_jump && !ctrl_jump_reg;
+    assign is_branch_instr = (dec_alu_type == `ALUTYPE_JUMP) && !dec_jump && !dec_jump_reg;
 
-    assign next_pc_val = ctrl_jump_reg ? jalr_target :
-                         ctrl_jump     ? jal_target  :
+    assign next_pc_val = dec_jump_reg ? jalr_target :
+                         dec_jump     ? jal_target  :
                          is_branch_instr && br_taken ? br_target :
                                          pc_plus_4;
 
@@ -137,8 +158,8 @@ module riscv_mc_cpu (
         .rs1_data       (rs1_data),
         .rs2_data       (rs2_data),
         .rd_old_data    (rd_old_data),
-        .reg_write      (ctrl_reg_write && (state == S_WRITEBACK)),
-        .rd_addr        (instr[`RV_RD_RANGE]),
+        .reg_write      (dec_reg_write && (state == S_WRITEBACK)),
+        .rd_addr        (dec_rd_addr),
         .rd_wdata       (wb_data)
     );
 
@@ -148,34 +169,27 @@ module riscv_mc_cpu (
         .imm            (imm_val)
     );
 
-    assign alu_in_a = ctrl_jump_reg                    ? rs1_data :
-                      (ctrl_alu_op == `ALUOP_AUIPC)    ? pc       :
-                      (ctrl_alu_type == `ALUTYPE_JUMP) ? pc       :
-                                                         rs1_data;
+    assign alu_in_a = dec_jump_reg                    ? dec_rs1_data :
+                      (dec_alu_op == `ALUOP_AUIPC)    ? pc           :
+                      (dec_alu_type == `ALUTYPE_JUMP) ? pc           :
+                                                         dec_rs1_data;
 
-    assign alu_in_b = ctrl_alu_src_imm ? imm_val : rs2_data;
+    assign alu_in_b = dec_alu_src_imm ? dec_imm_val : dec_rs2_data;
 
     alu u_alu (
         .a              (alu_in_a),
         .b              (alu_in_b),
-        .alu_op         (ctrl_alu_op),
-        .alu_type       (ctrl_alu_type),
+        .alu_op         (dec_alu_op),
+        .alu_type       (dec_alu_type),
         .result         (alu_out),
         .zero           (alu_zero)
     );
 
     branch_unit u_branch (
-        .rs1_data       (rs1_data),
-        .rs2_data       (rs2_data),
-        .funct3         (ctrl_branch_type),
+        .rs1_data       (dec_rs1_data),
+        .rs2_data       (dec_rs2_data),
+        .funct3         (dec_branch_type),
         .branch_taken   (br_taken)
-    );
-
-    mac_unit u_mac (
-        .rs1_data       (rs1_data),
-        .rs2_data       (rs2_data),
-        .rd_old_data    (rd_old_data),
-        .mac_result     (mac_result)
     );
 
     csr_perf_counter u_perf (
@@ -189,19 +203,18 @@ module riscv_mc_cpu (
         .mac_count      (mac_cnt)
     );
 
-    assign wb_data = (ctrl_wb_sel == WB_MEM) ? mem_rdata  :
-                     (ctrl_wb_sel == WB_PC4) ? pc_plus_4  :
-                     (ctrl_wb_sel == WB_MAC) ? alu_result :
+    assign wb_data = (dec_wb_sel == WB_MEM) ? mem_rdata :
+                     (dec_wb_sel == WB_PC4) ? pc_plus_4 :
                                                alu_result;
 
     assign ibus_addr = pc;
     assign ibus_en   = (state == S_FETCH);
 
     assign dbus_addr     = alu_result;
-    assign dbus_wdata    = rs2_data;
+    assign dbus_wdata    = dec_rs2_data;
     assign dbus_byte_sel = 4'b1111;
-    assign dbus_we       = (state == S_MEMORY) && ctrl_mem_write;
-    assign dbus_en       = (state == S_MEMORY) && (ctrl_mem_read || ctrl_mem_write);
+    assign dbus_we       = (state == S_MEMORY) && dec_mem_write;
+    assign dbus_en       = (state == S_MEMORY) && (dec_mem_read || dec_mem_write);
 
     assign debug_pc      = pc;
     assign debug_state   = {5'b0, state};
@@ -212,11 +225,11 @@ module riscv_mc_cpu (
     // Register-writing instructions retire in WRITEBACK, stores in MEMORY, and
     // branches in EXECUTE. EBREAK and illegal instructions never assert the
     // decoder's instret pulse.
-    assign perf_instret_pulse = ctrl_instret_pulse &&
-                                (((state == S_WRITEBACK) && ctrl_reg_write) ||
-                                 ((state == S_MEMORY) && ctrl_mem_write) ||
+    assign perf_instret_pulse = dec_instret_pulse &&
+                                (((state == S_WRITEBACK) && dec_reg_write) ||
+                                 ((state == S_MEMORY) && dec_mem_write) ||
                                  ((state == S_EXECUTE) && is_branch_instr));
-    assign perf_mac_pulse     = ctrl_mac_pulse && (state == S_WRITEBACK);
+    assign perf_mac_pulse     = dec_mac_pulse && (state == S_WRITEBACK);
 
     assign perf_cycle_count   = cycle_cnt;
     assign perf_instret_count = instret_cnt;
@@ -231,6 +244,24 @@ module riscv_mc_cpu (
             mem_rdata    <= `ZERO_WORD;
             halted       <= `FALSE;
             illegal      <= `FALSE;
+            dec_rd_addr  <= 5'b0;
+            dec_rs1_data <= `ZERO_WORD;
+            dec_rs2_data <= `ZERO_WORD;
+            dec_rd_old_data <= `ZERO_WORD;
+            dec_imm_val  <= `ZERO_WORD;
+            dec_alu_op   <= `ALUOP_NOP;
+            dec_alu_type <= `ALUTYPE_NOP;
+            dec_alu_src_imm <= `FALSE;
+            dec_reg_write <= `FALSE;
+            dec_mem_read <= `FALSE;
+            dec_mem_write <= `FALSE;
+            dec_wb_sel <= WB_ALU;
+            dec_branch_type <= `RV_F3_BEQ;
+            dec_jump <= `FALSE;
+            dec_jump_reg <= `FALSE;
+            dec_is_mac <= `FALSE;
+            dec_instret_pulse <= `FALSE;
+            dec_mac_pulse <= `FALSE;
         end else begin
             state <= next_state;
 
@@ -240,6 +271,25 @@ module riscv_mc_cpu (
                 end
 
                 S_DECODE: begin
+                    dec_rd_addr       <= instr[`RV_RD_RANGE];
+                    dec_rs1_data      <= rs1_data;
+                    dec_rs2_data      <= rs2_data;
+                    dec_rd_old_data   <= rd_old_data;
+                    dec_imm_val       <= imm_val;
+                    dec_alu_op        <= ctrl_alu_op;
+                    dec_alu_type      <= ctrl_alu_type;
+                    dec_alu_src_imm   <= ctrl_alu_src_imm;
+                    dec_reg_write     <= ctrl_reg_write;
+                    dec_mem_read      <= ctrl_mem_read;
+                    dec_mem_write     <= ctrl_mem_write;
+                    dec_wb_sel        <= ctrl_wb_sel;
+                    dec_branch_type   <= ctrl_branch_type;
+                    dec_jump          <= ctrl_jump;
+                    dec_jump_reg      <= ctrl_jump_reg;
+                    dec_is_mac        <= ctrl_is_mac;
+                    dec_instret_pulse <= ctrl_instret_pulse;
+                    dec_mac_pulse     <= ctrl_mac_pulse;
+
                     if (ctrl_halt) begin
                         halted <= `TRUE;
                     end else if (ctrl_illegal) begin
@@ -249,20 +299,20 @@ module riscv_mc_cpu (
                 end
 
                 S_EXECUTE: begin
-                    if (ctrl_is_mac)
+                    if (dec_is_mac)
                         alu_result <= mac_result;
                     else
                         alu_result <= alu_out;
 
-                    if (!(ctrl_mem_read || ctrl_mem_write || ctrl_reg_write))
+                    if (!(dec_mem_read || dec_mem_write || dec_reg_write))
                         pc <= next_pc_val;
                 end
 
                 S_MEMORY: begin
-                    if (ctrl_mem_read)
+                    if (dec_mem_read)
                         mem_rdata <= dbus_rdata;
 
-                    if (!ctrl_reg_write)
+                    if (!dec_reg_write)
                         pc <= next_pc_val;
                 end
 
@@ -296,16 +346,16 @@ module riscv_mc_cpu (
             end
 
             S_EXECUTE: begin
-                if (ctrl_mem_read || ctrl_mem_write)
+                if (dec_mem_read || dec_mem_write)
                     next_state = S_MEMORY;
-                else if (ctrl_reg_write)
+                else if (dec_reg_write)
                     next_state = S_WRITEBACK;
                 else
                     next_state = S_FETCH;
             end
 
             S_MEMORY: begin
-                if (ctrl_reg_write)
+                if (dec_reg_write)
                     next_state = S_WRITEBACK;
                 else
                     next_state = S_FETCH;

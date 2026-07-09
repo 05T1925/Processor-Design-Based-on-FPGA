@@ -1,7 +1,7 @@
 Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version     : Vivado v.2018.3 (win64) Build 2405991 Thu Dec  6 23:38:27 MST 2018
-| Date             : Thu Jul  9 11:12:37 2026
+| Date             : Thu Jul  9 18:48:46 2026
 | Host             : 7_Machine running 64-bit major release  (build 9200)
 | Command          : report_power -file minisys_top_power_routed.rpt -pb minisys_top_power_summary_routed.pb -rpx minisys_top_power_routed.rpx
 | Design           : minisys_top
@@ -30,14 +30,14 @@ Table of Contents
 ----------
 
 +--------------------------+--------------+
-| Total On-Chip Power (W)  | 0.110        |
+| Total On-Chip Power (W)  | 0.144        |
 | Design Power Budget (W)  | Unspecified* |
 | Power Budget Margin (W)  | NA           |
-| Dynamic (W)              | 0.007        |
-| Device Static (W)        | 0.103        |
+| Dynamic (W)              | 0.047        |
+| Device Static (W)        | 0.097        |
 | Effective TJA (C/W)      | 2.7          |
-| Max Ambient (C)          | 84.7         |
-| Junction Temperature (C) | 25.3         |
+| Max Ambient (C)          | 84.6         |
+| Junction Temperature (C) | 25.4         |
 | Confidence Level         | Low          |
 | Setting File             | ---          |
 | Simulation Activity File | ---          |
@@ -49,20 +49,22 @@ Table of Contents
 1.1 On-Chip Components
 ----------------------
 
-+----------------+-----------+----------+-----------+-----------------+
-| On-Chip        | Power (W) | Used     | Available | Utilization (%) |
-+----------------+-----------+----------+-----------+-----------------+
-| Clocks         |    <0.001 |        3 |       --- |             --- |
-| Slice Logic    |    <0.001 |       34 |       --- |             --- |
-|   CARRY4       |    <0.001 |        6 |     15850 |            0.04 |
-|   Register     |    <0.001 |       24 |    126800 |            0.02 |
-|   LUT as Logic |    <0.001 |        2 |     63400 |           <0.01 |
-|   Others       |     0.000 |        2 |       --- |             --- |
-| Signals        |    <0.001 |       39 |       --- |             --- |
-| I/O            |     0.006 |       42 |       285 |           14.74 |
-| Static Power   |     0.103 |          |           |                 |
-| Total          |     0.110 |          |           |                 |
-+----------------+-----------+----------+-----------+-----------------+
++--------------------------+-----------+----------+-----------+-----------------+
+| On-Chip                  | Power (W) | Used     | Available | Utilization (%) |
++--------------------------+-----------+----------+-----------+-----------------+
+| Clocks                   |     0.038 |        3 |       --- |             --- |
+| Slice Logic              |     0.002 |    19752 |       --- |             --- |
+|   LUT as Logic           |     0.002 |     3622 |     63400 |            5.71 |
+|   CARRY4                 |    <0.001 |       71 |     15850 |            0.45 |
+|   Register               |    <0.001 |     1901 |    126800 |            1.50 |
+|   Others                 |     0.000 |       10 |       --- |             --- |
+|   F7/F8 Muxes            |     0.000 |     4240 |     63400 |            6.69 |
+|   LUT as Distributed RAM |     0.000 |     9728 |     19000 |           51.20 |
+| Signals                  |     0.003 |     8959 |       --- |             --- |
+| I/O                      |     0.004 |       50 |       285 |           17.54 |
+| Static Power             |     0.097 |          |           |                 |
+| Total                    |     0.144 |          |           |                 |
++--------------------------+-----------+----------+-----------+-----------------+
 
 
 1.2 Power Supply Summary
@@ -71,12 +73,12 @@ Table of Contents
 +-----------+-------------+-----------+-------------+------------+
 | Source    | Voltage (V) | Total (A) | Dynamic (A) | Static (A) |
 +-----------+-------------+-----------+-------------+------------+
-| Vccint    |       1.000 |     0.016 |       0.001 |      0.015 |
+| Vccint    |       1.000 |     0.058 |       0.043 |      0.015 |
 | Vccaux    |       1.800 |     0.018 |       0.000 |      0.018 |
-| Vcco33    |       3.300 |     0.006 |       0.002 |      0.004 |
+| Vcco33    |       3.300 |     0.005 |       0.001 |      0.004 |
 | Vcco25    |       2.500 |     0.000 |       0.000 |      0.000 |
 | Vcco18    |       1.800 |     0.000 |       0.000 |      0.000 |
-| Vcco15    |       1.500 |     0.004 |       0.000 |      0.004 |
+| Vcco15    |       1.500 |     0.000 |       0.000 |      0.000 |
 | Vcco135   |       1.350 |     0.000 |       0.000 |      0.000 |
 | Vcco12    |       1.200 |     0.000 |       0.000 |      0.000 |
 | Vccaux_io |       1.800 |     0.000 |       0.000 |      0.000 |
@@ -137,10 +139,15 @@ Table of Contents
 3.1 By Hierarchy
 ----------------
 
-+-------------+-----------+
-| Name        | Power (W) |
-+-------------+-----------+
-| minisys_top |     0.007 |
-+-------------+-----------+
++----------------------------------+-----------+
+| Name                             | Power (W) |
++----------------------------------+-----------+
+| minisys_top                      |     0.047 |
+|   u_soc_top                      |     0.043 |
+|     cpu_top_inst                 |     0.011 |
+|       gen_riscv_mc.riscv_mc_inst |     0.011 |
+|     data_ram_inst                |     0.013 |
+|     inst_ram_inst                |     0.018 |
++----------------------------------+-----------+
 
 

@@ -17,6 +17,8 @@ proc create_report { reportName command } {
     send_msg_id runtcl-5 warning "$msg"
   }
 }
+set_param xicom.use_bs_reader 1
+set_msg_config -id {Common 17-41} -limit 10000000
 create_project -in_memory -part xc7a100tfgg484-1
 
 set_param project.singleFileAddWarning.threshold 0
@@ -29,7 +31,27 @@ set_property target_language Verilog [current_project]
 set_property ip_output_repo c:/Users/rolle/Processor-Design-Based-on-FPGA/processor_fpga/processor_fpga.cache/ip [current_project]
 set_property ip_cache_permissions {read write} [current_project]
 read_verilog C:/Users/rolle/Processor-Design-Based-on-FPGA/src/core/public.vh
-read_verilog -library xil_defaultlib C:/Users/rolle/Processor-Design-Based-on-FPGA/src/board/minisys_top.v
+read_mem C:/Users/rolle/Processor-Design-Based-on-FPGA/processor_fpga/boot_rom.mem
+read_verilog -library xil_defaultlib {
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/core/alu.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/core/branch_unit.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/bus/bus_decoder.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/bus/bus_mux.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/core/control_unit.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/core/cpu_top.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/core/csr_perf_counter.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/memory/data_ram.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/io/gpio_led.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/io/gpio_switch.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/core/imm_gen.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/memory/inst_ram.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/core/regfile.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/core/riscv_mc_cpu.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/core/riscv_mc_wrapper.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/io/seg7_driver.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/soc/soc_top.v
+  C:/Users/rolle/Processor-Design-Based-on-FPGA/src/board/minisys_top.v
+}
 # Mark all dcp files as not used in implementation to prevent them from being
 # stitched into the results of this synthesis run. Any black boxes in the
 # design are intentionally left as such for best results. Dcp files will be
