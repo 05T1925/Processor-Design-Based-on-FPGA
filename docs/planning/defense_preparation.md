@@ -533,4 +533,14 @@ rs1_forwarded = EX/MEM.alu_result  (if EX/MEM.rd == ID/EX.rs1)
 | 优化路线 | `docs/planning/optimization_roadmap.md` | 六方向可行性 + PPA框架 + 路线图 |
 | 演示设计 | `docs/design/demo_program_design.md` | 测试程序方案 + 瓶颈分析 + 创新总结 |
 | 性能对比 | `reports/tables/perf_comparison.md` | 点积对比数据（speedup=1.1481） |
-| PPA模板 | `reports/tables/ppa_comparison.md` | PPA字段定义 + 验收条件 |
+| PPA 模板 | `reports/tables/ppa_comparison.md` | PPA 字段定义 + 验收条件 |
+| **性能总览** 🆕 | **`reports/tables/performance_summary.md`** | **核心指标汇总 + CPI演进 + 数据速查卡** |
+| **CPI 分解** 🆕 | **`reports/tables/cpi_breakdown.md`** | **CPI 深度分解 + 冒险惩罚量化 + 程序场景预期** |
+| **资源利用** 🆕 | **`reports/tables/resource_utilization.md`** | **按模块资源分解 + PPA三角 + 面积效率** |
+| **加速比分析** 🆕 | **`reports/tables/speedup_analysis.md`** | **MAC加速 + 流水线加速 + 投入产出ROI** |
+| **前后对比** 🆕 | **`reports/tables/before_after_comparison.md`** | **多周期→流水线+BTB 全维度前后对比** |
+| **性能图表** 🆕 | **`reports/tables/performance_charts.md`** | **ASCII图表集 + 答辩PPT建议** |
+| **冒险分析** 🆕 | **`reports/tables/pipeline_hazard_analysis.md`** | **流水线冒险完整方案 + RAW矩阵 + 预期CPI** |
+| **分支预测** 🆕 | **`reports/tables/branch_prediction_stats.md`** | **BTB 正确率模型 + 统计数据 + 验证计划** |
+| **PPA 估计** 🆕 | **`reports/tables/pipeline_ppa_estimates.md`** | **流水线 PPA 模块分解 + 时序路径 + 功耗** |
+| **可视化仪表板** 🆕 | **`reports/figures/pipeline_performance_dashboard.html`** | **交互式 KPI + CPI + 流水线时空图 + BTB 状态机** |
