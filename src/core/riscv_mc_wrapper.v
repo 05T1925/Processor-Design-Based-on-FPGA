@@ -30,7 +30,12 @@ module riscv_mc_wrapper (
 
     // Debug
     output wire [31:0] debug_pc,
-    output wire [7:0]  debug_state
+    output wire [7:0]  debug_state,
+
+    // Performance counters
+    output wire [31:0] perf_cycle_count,
+    output wire [31:0] perf_instret_count,
+    output wire [31:0] perf_mac_count
 );
 
     // Internal CPU uses unified address space directly (no remapping needed).
@@ -54,7 +59,10 @@ module riscv_mc_wrapper (
         .debug_pc       (debug_pc),
         .debug_state    (debug_state),
         .debug_x10      (),
-        .debug_illegal  ()
+        .debug_illegal  (),
+        .perf_cycle_count   (perf_cycle_count),
+        .perf_instret_count (perf_instret_count),
+        .perf_mac_count     (perf_mac_count)
     );
 
 endmodule

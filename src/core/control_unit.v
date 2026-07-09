@@ -314,16 +314,21 @@ module control_unit (
             // MAC custom-0 instruction
             //------------------------------------------------------------------
             `RV_OP_MAC: begin
-                is_mac        = `TRUE;
-                reg_write     = `TRUE;
-                reg_read_rs1  = `TRUE;
-                reg_read_rs2  = `TRUE;
-                rd_old_read   = `TRUE;
-                alu_type      = `ALUTYPE_MAC;
-                alu_op        = `ALUOP_MAC;
-                wb_sel        = WB_MAC;
-                instret_pulse = `TRUE;
-                mac_pulse     = `TRUE;
+                if ((funct3 == `RV_F3_ADDSUB) &&
+                    (funct7 == `RV_F7_MAC)) begin
+                    is_mac        = `TRUE;
+                    reg_write     = `TRUE;
+                    reg_read_rs1  = `TRUE;
+                    reg_read_rs2  = `TRUE;
+                    rd_old_read   = `TRUE;
+                    alu_type      = `ALUTYPE_MAC;
+                    alu_op        = `ALUOP_MAC;
+                    wb_sel        = WB_MAC;
+                    instret_pulse = `TRUE;
+                    mac_pulse     = `TRUE;
+                end else begin
+                    illegal_instr = `TRUE;
+                end
             end
 
             //------------------------------------------------------------------

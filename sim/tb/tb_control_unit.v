@@ -194,7 +194,7 @@ module tb_control_unit;
             $display("FAIL: EBREAK decode");
 
         // MAC
-        instr = 32'b0000000_00011_00010_000_00001_0001011;
+        instr = 32'b0000001_00011_00010_000_00001_0001011;
         #1;
         if (is_mac && reg_write && reg_read_rs1 &&
             reg_read_rs2 && rd_old_read &&
@@ -206,6 +206,24 @@ module tb_control_unit;
             $display("PASS: MAC decode");
         else
             $display("FAIL: MAC decode");
+
+        // Invalid MAC funct7
+        instr = 32'b0000000_00011_00010_000_00001_0001011;
+        #1;
+        if (illegal_instr && !is_mac && !reg_write &&
+            !mac_pulse && !instret_pulse)
+            $display("PASS: invalid MAC funct7 rejected");
+        else
+            $display("FAIL: invalid MAC funct7 accepted");
+
+        // Invalid MAC funct3
+        instr = 32'b0000001_00011_00010_001_00001_0001011;
+        #1;
+        if (illegal_instr && !is_mac && !reg_write &&
+            !mac_pulse && !instret_pulse)
+            $display("PASS: invalid MAC funct3 rejected");
+        else
+            $display("FAIL: invalid MAC funct3 accepted");
 
         // Illegal instruction
         instr = 32'hFFFFFFFF;

@@ -45,11 +45,12 @@ module tb_cpu_basic;
             uut.data_ram_inst.mem[i] = 32'h00000000;
         end
 
-        // Load test program (path relative to project root)
-        // Adjust if simulator working directory differs
+        // Load test program from the repository root.
         $readmemh(
-            "../sim/programs/basic_test.hex",
-            uut.inst_ram_inst.mem
+            "sim/programs/basic_test.hex",
+            uut.inst_ram_inst.mem,
+            0,
+            10
         );
 
         #20;

@@ -54,6 +54,9 @@ module soc_top #(
     wire        dbus_en;
     wire        dbus_ready;
     wire        dbus_error;
+    wire [31:0] perf_cycle_count;
+    wire [31:0] perf_instret_count;
+    wire [31:0] perf_mac_count;
 
     wire [5:0] irq = 6'b000000;
 
@@ -79,7 +82,10 @@ module soc_top #(
         .dbus_ready     (dbus_ready),
         .dbus_error     (dbus_error),
         .debug_pc       (debug_pc),
-        .debug_state    (debug_state)
+        .debug_state    (debug_state),
+        .perf_cycle_count   (perf_cycle_count),
+        .perf_instret_count (perf_instret_count),
+        .perf_mac_count     (perf_mac_count)
     );
 
     //==========================================================================
@@ -217,10 +223,21 @@ module soc_top #(
     wire [31:0] wdt_rdata    = 32'b0;
     wire        wdt_ready    = 1'b1;
 
-    // Performance counters (MMIO: 0xFFFF_FCB0)
-    // These are integrated into the CPU core; placeholders here
-    wire [31:0] perf_rdata   = 32'b0;
+    // Performance counters (read-only MMIO)
+    //   0xFFFF_FCB0: cycle_count
+    //   0xFFFF_FCB4: instret_count
+    //   0xFFFF_FCB8: mac_count
+    reg  [31:0] perf_rdata;
     wire        perf_ready   = 1'b1;
+
+    always @(*) begin
+        case (dbus_addr[3:2])
+            2'b00:   perf_rdata = perf_cycle_count;
+            2'b01:   perf_rdata = perf_instret_count;
+            2'b10:   perf_rdata = perf_mac_count;
+            default: perf_rdata = 32'b0;
+        endcase
+    end
 
     // Result register (MMIO: 0xFFFF_FCC0)
     // Placeholder for future result_reg
@@ -268,6 +285,7 @@ module soc_top #(
                         switch_sel   ? switch_ready   :
                         seg7_sel     ? seg7_ready     :
                         uart_sel     ? uart_ready     :
+                        perf_sel     ? perf_ready     :
                         1'b1;
     assign dbus_error = 1'b0;
 
