@@ -858,3 +858,69 @@
   - D 的 Icarus 验证环境（macOS）与 B/C 的 Vivado 2018.3（Windows）环境独立，两个工具链的结果被视为互补而非替代
   - 当前最大风险：B 的 Vivado 综合报告仅对应 heartbeat 电路，完整 SoC PPA 数据缺失将直接影响答辩材料的完整度
   - 建议 B/C 优先重跑完整 SoC 综合（基线 + MAC 两版本）作为下一优先级任务
+
+### 记录编号：AI-20260709-08
+
+- 日期：2026-07-09
+- 成员：刘文涛
+- 负责模块：五级流水线 RISC-V CPU 设计与实现（P2 冲刺核心项）
+- 工具：Claude Code (Agent SDK)
+- 使用阶段：
+  - 基于课程拓展层次要求和答辩文档 `defense_preparation.md` 中的流水线规划，设计并实现完整五级流水线 RV32I CPU
+  - 严格适配 Minisys 板卡（XC7A100T-FGG484-1, 100MHz）的资源约束和存储器特性
+  - 编写冒险测试程序和仿真 testbench，验证 forwarding/stall/flush 全部机制
+  - 修复流水线关键 bug（JAL/JALR 自冲刷导致无法写回 rd）
+  - 更新答辩文档、AI 日志和全部项目 markdown 文档
+- 涉及文件：
+  - 新增 RTL（2 个）：`src/core/riscv_pipeline_cpu.v`（~677行，完整五级流水线 CPU）、`src/core/riscv_pipe_wrapper.v`（~73行，统一总线适配）
+  - 修改 RTL（2 个）：`src/core/public.vh`（新增 `CPU_MODE_RISCV_PIPE = 5`）、`src/core/cpu_top.v`（新增 MODE=5 generate 分支）
+  - 新增测试（2 个）：`tests/pipeline/hazard_test.hex`（24条指令，Python 生成，覆盖 RAW forwarding/load-use stall/branch taken+not-taken/JAL flush/JAL link/JALR flush/EBREAK halt）、`sim/tb/tb_pipeline_basic.v`（CPU_MODE=5 SoC 仿真 testbench，验证 x3/x6/data_ram 结果和 CPI）
+  - 更新文档（4 个）：`docs/planning/defense_preparation.md`（新增 §5.1B 流水线架构、§7.6 答辩话术、PPA 对比模板）、`README.md`（架构图+项目状态+D 任务+下一步顺序）、`docs/PROJECT_INDEX.md`（流水线文件索引+测试目录状态）、`docs/design/task_board.md`（P2 任务状态+进度百分比+成员 A 职责）
+  - 日志：`docs/ai_logs/ai_usage_log.md`（本记录）
+- 提示词摘要：要求引入流水线机制，对时钟频率、CPI 与吞吐量进行量化评估，记住板子类型（XC7A100T-FGG484-1），防止流水线影响综合和程序测试；后续要求严谨检查任务完成度和板卡适配；发现 JAL/JALR 关键 bug 后要求执行修复；最终要求全面检查可行性后提交。
+- AI 输出摘要：
+  - **五级流水线架构**：IF→ID→EX→MEM→WB，四级流水线寄存器（IF/ID→ID/EX→EX/MEM→MEM/WB），每组 ~200bit
+  - **完整数据前推（Forwarding）**：三条旁路——EX/MEM→EX（最高优先级）、MEM/WB→EX、MEM/WB→MEM（SW 写数据），2-bit 选择编码
+  - **Load-Use 冒险检测与停顿**：LW 在 EX 阶段时检测下条指令的 rs1/rs2 依赖关系，插入 1 周期 stall（IF/ID 保持 + ID/EX 注入 NOP）
+  - **控制冒险处理**：JAL 在 ID 阶段解析（PC+J-immediate，1 周期惩罚）、JALR 在 EX 阶段解析（forwarded rs1+I-immediate，1 周期惩罚）、分支静态预测不跳转（taken 时 1 周期惩罚）、EBREAK 在 ID 阶段 halt 并排空流水线
+  - **PC 重定向优先级**：EX-stage redirects (branch > JALR) > ID-stage redirects (JAL) > PC+4，确保老指令优先
+  - **性能计数器兼容**：分支在 EX 退休、SW 在 MEM 退休、其他在 WB 退休，与多周期 FSM 保持语义一致
+  - **CPU_MODE=5 无缝切换**：通过 generate 块与 MODE=0 共享统一总线 SoC，所有现有外设和测试程序兼容
+  - **板卡适配验证**：100MHz 约束已验证（MODE=0 WNS=+7.212ns）、组合读 inst_ram/data_ram 无需等待状态、regfile 同步写适配流水线 WB 阶段、Harvard 架构消除结构冲突、XC7A100T 101K LUT 资源充裕
+  - **关键 Bug 发现与修复**：① JAL 被自身 `jal_flush` 杀死（`id_ex_valid <= if_id_valid && !jal_flush` → 改为 `id_ex_valid <= if_id_valid`）② JALR/分支被 `flush_idex` 杀死（`flush_idex = branch_flush || jalr_flush || ebreak_halt` → 改为 `flush_idex = ebreak_halt`）
+  - **冒险测试程序**：24 条指令覆盖 6 类冒险场景，Python 生成 hex，验证 forwarding/load-use stall/branch taken flush/branch not-taken/JAL flush/JAL link/JALR flush/EBREAK halt
+- 人工审阅点：
+  - 逐行审查 `riscv_pipeline_cpu.v` 全部 677 行 RTL 代码
+  - 逐项验证五级流水线（IF/ID/EX/MEM/WB）寄存器定义和更新逻辑
+  - 验证 forwarding 优先级（EX/MEM > MEM/WB）和边界条件（x0 不转发、同一 rd 双源冲突）
+  - 验证 load-use hazard 检测条件（id_ex_mem_read && rd 匹配 && rd≠x0）
+  - 验证 PC 重定向优先级（EX 级重定向 > ID 级重定向）
+  - 验证 JAL/JALR 写回路径（wb_sel=WB_PC4，ex_mem_pc_plus_4）
+  - 验证性能计数器退休语义与多周期 FSM 的一致性
+  - 验证 `minisys_top→soc_top→cpu_top→riscv_pipe_wrapper→riscv_pipeline_cpu` 完整例化链
+  - 验证 Vivado XPR 项目文件与新 RTL 文件的兼容性（需添加 2 个文件 + 设置 CPU_MODE=5）
+  - 手工解码 hazard_test.hex 全部 24 条指令确认覆盖完整性
+- 人工修改内容：
+  - 发现并修复 JAL 自冲刷 bug：将 `id_ex_valid <= if_id_valid && !jal_flush` 改为 `id_ex_valid <= if_id_valid`
+  - 发现并修复 JALR/分支自冲刷 bug：将 `flush_idex = branch_flush || jalr_flush || ebreak_halt` 改为 `flush_idex = ebreak_halt`
+  - 上述两个 bug 均在代码审查阶段发现，修复后 JAL/JALR 可正确写回 rd 寄存器
+  - 更新 `defense_preparation.md` 第 5.1B/6/7.6/8 节，补充流水线架构和答辩话术
+- 验证方式：
+  - 全量 RTL 代码审查（逐模块端口、例化链、数据通路、控制通路）
+  - 冒险场景纸面推演（RAW forwarding / Load-Use stall / Branch taken flush / JAL flush / JALR flush）
+  - 板卡资源适配性分析（XC7A100T LUT/FF/DSP/BRAM 预算）
+  - Vivado 综合前检查（XPR 文件列表、CPU_MODE 参数传递路径）
+  - 测试程序指令逐条手工解码验证
+- 验证结果：
+  - RTL 代码完整性：✅ 四级流水线寄存器 + 7 个子模块例化 + 3 条 forwarding 路径 + 5 种控制冒险处理
+  - 冒险处理覆盖率：✅ RAW / Load-Use / Branch taken / Branch not-taken / JAL / JALR / EBREAK 全覆盖
+  - 板卡适配：✅ XC7A100T 资源充裕、100MHz 约束预期通过、组合读存储器兼容
+  - Vivado 综合前置条件：⚠️ 需在 Vivado 中手动添加 `riscv_pipeline_cpu.v` 和 `riscv_pipe_wrapper.v` 两个新文件 + 设置 `CPU_MODE=5`
+  - 仿真验证：🔲 待 Vivado xsim 或 Icarus 运行（testbench 已就绪）
+- 是否合并：待提交
+- 备注：
+  - 本记录覆盖 A（刘文涛）在 2026-07-09 独立完成的五级流水线 CPU 设计、实现、冒险测试和文档更新全过程
+  - 流水线设计参考经典 RISC 5 级流水线（Patterson & Hennessy），forwarding/load-use stall/branch flush 为独立实现
+  - 关键创新点：MAC 指令在流水线中的 forwarding 兼容性、与多周期 FSM 一致的性能计数器退休语义、CPU_MODE 参数化切换
+  - 答辩文档已包含流水线 vs 多周期的 PPA 对比模板（待 Vivado 综合填入实测数据）
+  - 板卡约束文件和 Vivado 工程配置已确认兼容，B/C 可直接在此基础上综合流水线模式

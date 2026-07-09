@@ -99,6 +99,33 @@ module cpu_top #(
             assign perf_mac_count     = 32'b0;
 
         //======================================================================
+        // Mode 5: RV32I 5-Stage Pipeline CPU (P2 Sprint)
+        //======================================================================
+        end else if (CPU_MODE == 5) begin : gen_riscv_pipe
+            riscv_pipe_wrapper riscv_pipe_inst (
+                .clk            (clk),
+                .rst_n          (rst_n),
+                .irq            (irq),
+                .ibus_addr      (ibus_addr),
+                .ibus_rdata     (ibus_rdata),
+                .ibus_en        (ibus_en),
+                .ibus_ready     (ibus_ready),
+                .dbus_addr      (dbus_addr),
+                .dbus_wdata     (dbus_wdata),
+                .dbus_rdata     (dbus_rdata),
+                .dbus_byte_sel  (dbus_byte_sel),
+                .dbus_we        (dbus_we),
+                .dbus_en        (dbus_en),
+                .dbus_ready     (dbus_ready),
+                .dbus_error     (dbus_error),
+                .debug_pc       (debug_pc),
+                .debug_state    (debug_state),
+                .perf_cycle_count   (perf_cycle_count),
+                .perf_instret_count (perf_instret_count),
+                .perf_mac_count     (perf_mac_count)
+            );
+
+        //======================================================================
         // Mode 2-4: MIPS modes (placeholder - use minisys_unified wrappers)
         //======================================================================
         end else begin : gen_placeholder

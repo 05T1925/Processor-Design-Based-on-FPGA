@@ -221,5 +221,6 @@
 `define CPU_MODE_MIPS_SC    2   // MIPS single-cycle (from SUSTech CS202)
 `define CPU_MODE_MIPS_PIPE  3   // MIPS 5-stage pipeline basic (from NCUT)
 `define CPU_MODE_MIPS_ADV   4   // MIPS 5-stage pipeline advanced (from SEU)
+`define CPU_MODE_RISCV_PIPE 5   // RV32I 5-stage pipeline (P2 sprint)
 
 `endif  // PUBLIC_VH

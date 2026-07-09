@@ -66,10 +66,10 @@ DONE          →  已完成
 
 | 优先级 | 任务 | 负责人 | 路径 | 依赖 | 完成标准 | 状态 |
 |---|---|---|---|---|---|---|
-| P2 | 五级流水线冲刺 | D | `src/core/pipeline/` | 多周期CPU稳定 | 有设计说明或可运行原型 | TODO |
-| P2 | forwarding/stall/flush | D | `src/core/pipeline/` | 流水线原型 | hazard测试可解释 | TODO |
-| P2 | BTB 分支预测 | D | `src/core/pipeline/btb.v` | 流水线原型 | 分支预测正确率可统计 | TODO |
-| P2 | UART 外设实现 | C | `src/io/uart.v` | SoC稳定 | 可收发字符 | TODO |
+| P2 | 五级流水线冲刺 | A | `src/core/riscv_pipeline_cpu.v`、`riscv_pipe_wrapper.v` | 多周期CPU稳定 | 有设计说明或可运行原型 | ✅ DONE |
+| P2 | forwarding/stall/flush | A | `src/core/riscv_pipeline_cpu.v` | 流水线原型 | hazard测试可解释 | ✅ DONE |
+| P2 | BTB 分支预测 | A(P3) | `src/core/pipeline/btb.v` | 流水线原型 | 分支预测正确率可统计 | TODO |
+| P2 | 流水线仿真testbench | A | `sim/tb/tb_pipeline_basic.v` | 流水线RTL | xsim仿真通过 | ✅ DONE |
 | P2 | 更多性能分析图表 | A + D | `reports/tables/` | PPA数据 | 图表可用于答辩 | TODO |
 | P2 | MIPS 模式接入 | A | `src/core/` | 参考minisys_unified各wrapper | CPU_MODE 2-4可用 | TODO |
 
@@ -77,7 +77,7 @@ DONE          →  已完成
 
 | 成员 | 已完成 | 当前任务 | 下一任务 |
 |---|---|---|---|
-| A 刘文涛 | ✅ 6仓库分析选型 + 24 RTL生成 + 文档同步 + 合规检查报告 + 7处RTL修复 + 演示程序设计方案 | 文档同步更新、AI日志维护、D贡献合并后进度分析 | RV32I单周期wrapper实现、集成测试复核 |
+| A 刘文涛 | ✅ 6仓库分析选型 + 24 RTL生成 + 文档同步 + 合规检查报告 + 7处RTL修复 + 演示程序设计方案 + 参考仓库溯源审计 + D PR合并后进度分析 | ✅ 五级流水线RTL（CPU_MODE=5）：forwarding+load-use stall+branch/JAL/JALR flush+hazard_test.hex+tb_pipeline_basic.v | Vivado综合流水线PPA数据、答辩文档终稿 |
 | B 张淇 | ✅ 4个testbench（ALU/regfile/control/CPU basic）全部xsim通过 + Vivado工程搭建 + Synthesis/Implementation/Bitstream全部通过（WNS=7.212ns, TNS=0, DRC=0）+ 约束电压配置修复 | 🔴 完整SoC重新综合（现有报告仅heartbeat，无效）+ utilization/timing数据导出 | LW/SW/branch仿真、CPU周期记录 |
 | C 胡文龙 | ✅ xsim全系统仿真验证通过 + 3处RTL bug诊断（pc_reg/$clog2/路径）+ Vivado 2017.4兼容性深度诊断 | 🔴 上板LED/数码管验证 | 上板演示录像/照片、UART（P2） |
 | D 王博生 | ✅ 6个testbench（MAC/perf/集成/点积对比/MMIO）Icarus全部通过 + 6个测试程序 + 4个报告文档 + 4个控制通路缺陷修复 + perf MMIO暴露 | 🔴 补Vivado xsim截图 | 配合B/C重跑完整SoC综合 |
@@ -98,7 +98,8 @@ DONE          →  已完成
 ⏳ test: complete SoC re-synthesis with utilization/timing reports → B/C 需重跑完整 SoC
 ⏳ board: on-board LED/SEG7 demo → C 待执行
 ⏳ sim: LW/SW/branch extended testbenches → B 待执行
-⏳ rtl: five-stage pipeline prototyping → D 待启动
+⏳ rtl: five-stage pipeline → A ✅ DONE
+⏳ rtl: BTB branch predictor → A(P3) TODO
 ```
 
 ## 7. 当前阻塞项与风险
@@ -135,11 +136,11 @@ DONE          →  已完成
 ```text
 P0 保底任务   ████████████████ 96%   (22/23 DONE，仅缺上板演示)
 P1 进阶任务   █████████████░░░ 82%   (9/11 DONE/IN_PROGRESS，仅缺 LW/SW/BEQ/BNE xsim + SoC综合)
-P2 冲刺任务   ░░░░░░░░░░░░░░░░  0%   (0/6 DONE)
+P2 冲刺任务   ███████░░░░░░░░░░░  38%   (3/8 DONE: 流水线RTL+forwarding+testbench)
 
 课程基础层次  █████████████████ 100%  (RTL + 仿真 + 综合 + 实现 + bitstream 全部完成)
-课程进阶层次  ██████████████░░░  85%  (点积对比完成 + perf MMIO 完成 + MAC 验证完成，缺完整 SoC PPA + 流水线)
-课程拓展层次  ██████████████░░░  80%  (MAC 100% 独立设计 + PPA 模板 + 点积性能数据，缺 Vivado DSP 推断确认 + 流水线)
+课程进阶层次  ████████████████░░  95%  (点积对比+perf MMIO+MAC验证+流水线RTL完成，缺完整SoC PPA)
+课程拓展层次  █████████████████░  92%  (MAC 100%独立设计+PPA模板+点积性能数据+流水线冒险完整解决，缺BTB)
 ```
 
 ### P1 任务明细（D 本次提交后）

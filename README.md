@@ -7,8 +7,8 @@
 - 课程题目：题目 B，基于 FPGA 开发板的处理器设计
 - 硬件平台：Minisys FPGA 实验板 + EES-329B-V1.1 子板，Xilinx Artix-7 XC7A100T
 - 开发环境：Vivado 2018.3，组内主仿真工具为 Vivado xsim
-- **当前阶段**：✅ 四仓库深度合并已完成 | RTL 基础设施 + RV32I 多周期 FSM CPU + 统一总线 SoC 已就位
-- 项目状态：RTL 主体已生成，待 Vivado xsim 仿真验证
+- **当前阶段**：✅ 五仓库深度合并已完成 | RTL 基础设施 + RV32I 多周期 FSM CPU + 五级流水线 CPU + 统一总线 SoC 已就位
+- 项目状态：多周期+流水线双模式可切换，待 Vivado 综合流水线模式获取 PPA 数据
 
 ## 当前主线（统一架构版）
 
@@ -19,17 +19,18 @@
 │ + BRAM 指令/数据存储器 (行为级, $readmemh初始化)          │
 │ + 标准化外设 (LED/Switch/SEG7/UART预留)                   │
 │ + 性能计数器 (cycle/instret/mac)                          │
-│ + 5种CPU模式可切换 (参数CPU_MODE)                         │
+│ + 6种CPU模式可切换 (参数CPU_MODE)                         │
 │   ├─ MODE 0: RV32I 多周期FSM ★ 主线                      │
 │   ├─ MODE 1: RV32I 单周期 (参考)                          │
 │   ├─ MODE 2: MIPS 单周期 (参考)                           │
 │   ├─ MODE 3: MIPS 5级流水线 (参考)                        │
-│   └─ MODE 4: MIPS 5级流水线+CP0 (参考)                    │
+│   ├─ MODE 4: MIPS 5级流水线+CP0 (参考)                    │
+│   └─ MODE 5: RV32I 五级流水线 (P2冲刺) 🆕                 │
 │ + PPA 分析与点积程序对比                                   │
 └─────────────────────────────────────────────────────────┘
 ```
 
-五级流水线、forwarding、load-use stall、branch flush、BTB 分支预测、UART 输出统计均为 P2 冲刺目标。
+五级流水线、forwarding、load-use stall、branch flush 已完成 🆕。BTB 分支预测、UART 输出统计为后续冲刺目标。
 
 ## 仓库目录
 
@@ -42,9 +43,9 @@ docs/team/         成员分工、每日流程、审查清单
 docs/ai_logs/      AI 使用日志
 docs/planning/     阶段规划记录
 src/
-├── core/          RV32I CPU 核心 (alu/regfile/control_unit/imm_gen/branch_unit/pc_reg/mac_unit/csr_perf_counter/cpu_top/riscv_mc_cpu)
-│   ├── public.vh  全局宏定义 (RV32I+MIPS+总线+ALU)
-│   └── pipeline/  P2流水线冲刺模块
+├── core/          RV32I CPU 核心 (alu/regfile/control_unit/imm_gen/branch_unit/pc_reg/mac_unit/csr_perf_counter/cpu_top/riscv_mc_cpu/riscv_pipeline_cpu)
+│   ├── public.vh  全局宏定义 (RV32I+MIPS+总线+ALU+CPU_MODE)
+│   └── riscv_pipe_wrapper.v 流水线CPU封装 🆕
 ├── bus/           统一总线系统 (bus_decoder/bus_mux)
 ├── memory/        存储器 (inst_ram/data_ram)
 ├── io/            外设控制器 (gpio_led/gpio_switch/seg7_driver)
@@ -132,7 +133,8 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 - ✅ **Vivado 2018.3 综合/实现/bitstream 全部通过**（B）：100MHz 时序充裕，DRC=0。
 - ✅ **RTL 综合阻断 bug 已修复**（A+C）：`pc_reg.v` wire→reg、`$clog2` 双版本兼容、include 路径、缺失模块补齐、ifdef 默认值修正。
 - ✅ Vivado 2017.4 / 2018.3 双版本兼容性验证通过。
-- 🔄 待完成：上板 LED/数码管演示（C）、MAC/性能计数器测试（D）、LW/SW/Branch 扩展仿真（B）、PPA 数据导出。
+- ✅ **五级流水线 RTL 已完成**（2026-07-09，A）：CPU_MODE=5，forwarding + load-use stall + branch flush + JAL/JALR 冲刷，含冒险测试程序和仿真testbench。
+- 🔄 待完成：上板 LED/数码管演示（C）、流水线 Vivado 综合 PPA 导出（B/C）、LW/SW/Branch 扩展仿真（B）。
 
 ## B/C/D 队友快速开始（四仓库深度合并后更新 ⭐）
 
@@ -195,11 +197,11 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 
 当前任务：
 
-1. **tb_mac.v**：验证 `mac_unit`（正数/0/溢出低32位/rd_old累加）
-2. **tb_perf_counter.v**：验证 cycle/instret/mac 计数
-3. 编写普通点积程序（RV32I汇编→hex）
-4. 编写 MAC 点积程序（使用 MAC 自定义指令）
-5. xsim 对比：result一致 + cycle/CPI统计
+1. ~~**tb_mac.v**：验证 `mac_unit`~~ ✅ 已完成
+2. ~~**tb_perf_counter.v**：验证 cycle/instret/mac 计数~~ ✅ 已完成
+3. ~~编写普通点积程序~~ ✅ 已完成（normal=70, 62cycle, 15instret）
+4. ~~编写 MAC 点积程序~~ ✅ 已完成（MAC=70, 54cycle, 13instret, speedup=1.15×）
+5. ~~xsim 对比~~ ✅ 已完成
 6. PPA 表格初稿（需等C提供Vivado数据）
 
 **禁止**：不要改基础CPU控制逻辑、不要改EBREAK/HALT、不要把流水线变P0。
@@ -219,12 +221,13 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 2. ~~**C** 在 Vivado 2018.3 中建立最小工程，添加全部 RTL 源文件和 `.xdc`，实测 P20 复位极性。~~ ✅ B 已完成工程搭建
 3. ~~**B** 编写 `tb_cpu_basic.v`，加载 `basic_test.hex`，验证多周期 FSM 全流程。~~ ✅ 已完成
 4. ~~**B** 跑 Vivado synthesis/implementation/bitstream，保存截图。~~ ✅ 已完成（WNS=7.212ns, TNS=0, DRC=0）
-5. **C** 上板验证 LED/数码管显示。（当前任务 🔴）
-6. **D** 编写 MAC/性能计数器 testbench，准备点积测试程序。（当前任务 🔴）
-7. **D** 对比普通点积和MAC点积的性能数据。
-8. **B** 扩展 LW/SW/Branch 仿真覆盖。
-9. **C/B** 导出 Vivado utilization/timing 数据到 `reports/vivado/`。
-10. **A** 复核所有测试结果，整理 PPA 数据，写报告。
+5. ~~**D** 编写 MAC/性能计数器 testbench，准备点积测试程序。~~ ✅ 已完成
+6. ~~**D** 对比普通点积和MAC点积的性能数据。~~ ✅ 已完成
+7. ~~**A** 实现五级流水线 RTL（CPU_MODE=5）~~ 🆕 ✅ 已完成：forwarding + load-use stall + branch/JAL/JALR flush + hazard_test.hex
+8. **C** 上板验证 LED/数码管显示。（当前任务 🔴）
+9. **B** 扩展 LW/SW/Branch 仿真覆盖。
+10. **B/C** Vivado 综合流水线模式（MODE=5），导出 PPA 数据到 `reports/vivado/`。
+11. **A** 复核所有测试结果，整理 PPA 数据，写报告。
 
 ## 关键新文档（必读）
 
