@@ -104,6 +104,13 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 - 不要把 Vivado 自动生成的临时工程文件提交到仓库。
 - 环境装好后先阅读 README 和分工文档，再领取任务。
 
+## Vivado 工程重建
+
+- 本仓库不提交 Vivado 自动生成的工程产物，例如 `.xpr`、`.runs/`、`.sim/`、`.cache/`、bitstream 和中间报告。
+- 克隆仓库后，请在 Vivado 2018.3 中手动新建工程，并添加 `src/` 下全部 RTL 源文件、`sim/tb/` 下需要的 testbench，以及 `constraints/minisys.xdc`。
+- 顶层上板入口使用 `src/board/minisys_top.v`；仿真时按需要选择对应 testbench。
+- 工程重建后再执行 `Synthesis -> Implementation -> Generate Bitstream`。
+
 ## 当前约束状态
 
 - 已从老师资料中确认 Minisys 主约束来源，并整理为 `constraints/minisys.xdc`。
