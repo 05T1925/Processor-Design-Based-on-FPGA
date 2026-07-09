@@ -27,7 +27,7 @@ DONE          →  已完成
 | P0 | memory map 冻结（统一总线版） | A | `docs/design/memory_map.md` | 统一总线架构 | 统一总线地址映射明确 | **DONE** |
 | P0 | 公共接口规范 | A | `docs/design/interfaces.md` | ISA、memory map、模块划分 | 接口可执行 | **DONE** |
 | P0 | 四仓库分析选型 | A | `docs/planning/four_repo_deep_merge_plan.md` | 6参考仓库 | 组件来源决策明确 | **DONE** |
-| P0 | 统一总线架构实现 | A | `src/bus/`、`src/memory/`、`src/io/`、`src/common/`、`src/soc/soc_top.v` | 参考SEU-Class2+minisys_unified | ibus/dbus+仲裁器+统一外设接口就位 | **DONE** |
+| P0 | 统一总线架构实现 | A | `src/bus/`、`src/memory/`、`src/io/`、`src/common/`、`src/soc/soc_top.v` | 参考SEU minisys+minisys_unified | ibus/dbus+仲裁器+统一外设接口就位 | **DONE** |
 | P0 | RV32I多周期FSM CPU+MAC | A | `src/core/`（全部14个文件，含riscv_sc_wrapper占位） | ISA、参考riscv-minisys+NCUT+SEU | 31条RV32I+MAC+6状态FSM代码就位 | **DONE** |
 | P0 | 全局宏定义头文件 | A | `src/core/public.vh` | RV32I+MIPS+总线+ALU | 280行宏定义完整 | **DONE** |
 | P0 | CPU_MODE 参数化框架 | A | `src/core/cpu_top.v`、`src/core/riscv_mc_wrapper.v` | 参考minisys_unified | generate块多核切换就位 | **DONE** |

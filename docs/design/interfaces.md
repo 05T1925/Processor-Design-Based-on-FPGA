@@ -149,7 +149,7 @@
 
 ## 12. `soc_top` 接口（四仓库深度合并后实现）
 
-基于 SEU-Class2 + minisys_unified 的统一总线架构，`soc_top.v` 已实现以下接口：
+基于 SEU minisys + minisys_unified 的统一总线架构，`soc_top.v` 已实现以下接口：
 
 ```verilog
 module soc_top #(
@@ -202,7 +202,7 @@ module minisys_top #(
 | 七段段选 | `seg[7:0]` | `seg[7:0]` | `seg_cat[7:0]` | 8 | 低点亮 | F15..E13 | ✅ |
 | 七段位选 | `an[7:0]` | `an[7:0]` | `seg_an[7:0]` | 8 | 低选中 | C19..A18 | ✅ |
 
-> **验证来源**：① SUSTech CS202 `minisys_cons.xdc`、② SEU-Class2 `minisys-1a-cpu.srcs/constrs_1/`、③ SEU-Group16 `cpu_1.srcs/constrs_1/`、④ 本项目 `constraints/minisys.xdc` 四个约束文件交叉比对，引脚分配100%一致。
+> **验证来源**：① SUSTech CS202 `minisys_cons.xdc`、② SEU minisys `minisys-1a-cpu.srcs/constrs_1/`、③ SEU minisys `cpu_1.srcs/constrs_1/`、④ 本项目 `constraints/minisys.xdc` 四个约束文件交叉比对，引脚分配100%一致。
 
 ## 14. 接口变更流程
 

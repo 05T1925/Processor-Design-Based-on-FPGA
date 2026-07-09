@@ -1,7 +1,7 @@
 //==============================================================================
 // pc_reg.v - Program Counter (RV32I)
 //
-// Based on: SEU-Class2 pc.v + NCUT pc_reg.v
+// Based on: SEU minisys (minisys-master) pc.v + NCUT pc_reg.v
 //
 // Default: pc = pc + 4 (byte-addressable, word-aligned instructions)
 // Branch/Jump: pc = next_pc (from alu_addr or {pc+4[31:28], J-imm})

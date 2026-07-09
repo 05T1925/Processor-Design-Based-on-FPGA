@@ -1,7 +1,7 @@
 //==============================================================================
 // alu.v - RV32I Arithmetic Logic Unit
 //
-// Based on: SEU-Group16 ALU classification + RV32I operations
+// Based on: SEU minisys (minisys-master) ALU classification + RV32I operations
 //
 // 6 operation categories: NOP, ARITH, LOGIC, MOVE, SHIFT, JUMP, MAC
 //==============================================================================

@@ -6,7 +6,7 @@
 
 ## 1. 地址空间总览（统一总线架构）
 
-采用 SEU-Class2 的统一共享总线架构（ibus + dbus），地址空间分为三个区域：
+采用 SEU minisys 的统一共享总线架构（ibus + dbus），地址空间分为三个区域：
 
 | 地址范围 | 名称 | 大小 | 说明 |
 |---|---|---|---|
@@ -16,10 +16,10 @@
 
 ### 为何从旧版 (0x1000_0xxx) 调整为统一总线地址 (0xFFFF_FCxx)
 
-旧版内存映射将 MMIO 放在 `0x1000_0000` 起，与 Data Memory 地址重叠。统一总线架构采用 SEU-Class2 的独立 MMIO 区域（`0xFFFF_FCxx`），好处是：
+旧版内存映射将 MMIO 放在 `0x1000_0000` 起，与 Data Memory 地址重叠。统一总线架构采用 SEU minisys 的独立 MMIO 区域（`0xFFFF_FCxx`），好处是：
 
 1. **地址空间清晰分离**：Data Memory 区（0x1000_xxxx）与外设区（0xFFFF_FCxx）不会冲突
-2. **与参考设计兼容**：SEU-Class2 和 minisys_unified 的外设控制器直接运行在 0xFFFF_FCxx 空间
+2. **与参考设计兼容**：SEU minisys 和 minisys_unified 的外设控制器直接运行在 0xFFFF_FCxx 空间
 3. **扩展性强**：每个外设分配 16 字节地址槽，最多支持 16 个外设，通过 `addr[9:4]` 二级译码
 4. **调试友好**：高位地址的外设访问在波形中一眼可辨
 

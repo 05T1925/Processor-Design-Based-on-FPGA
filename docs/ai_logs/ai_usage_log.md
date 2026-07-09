@@ -154,19 +154,19 @@
 
 - 日期：2026-07-08
 - 成员：刘文涛
-- 负责模块：六仓库深度分析 + 四仓库深度合并方案设计
+- 负责模块：六仓库深度分析 + 五仓库深度合并方案设计
 - 工具：Codex
-- 使用阶段：阅读分析 NCUT_MiniSys、SUSTech CS202、SEU-Class2 (z0gSh1u)、SEU-Group16 (Yuqifan1117)、riscv-minisys-cpu、minisys_unified 六个参考仓库，制定合并方案
+- 使用阶段：阅读分析 NCUT_MiniSys、SUSTech CS202、SEU minisys、riscv-minisys-cpu、minisys_unified 五个参考仓库，制定合并方案
 - 涉及文件：`docs/planning/four_repo_deep_merge_plan.md`（约400行）、项目已有文档
-- 提示词摘要：要求 Codex 阅读六个开源仓库的全部源码和文档，逐一分析架构特点（ISA/微架构/总线/外设/约束），与我们的项目对比，提取可取之处和不可用之处，制定组件级深度合并方案。
+- 提示词摘要：要求 Codex 阅读五个开源仓库的全部源码和文档，逐一分析架构特点（ISA/微架构/总线/外设/约束），与我们的项目对比，提取可取之处和不可用之处，制定组件级深度合并方案。
 - AI 输出摘要：
   - NCUT_MiniSys：5级流水线MIPS，31条指令，推荐借鉴regfile前推和流水线寄存器模板
   - SUSTech CS202：Minisys单周期MIPS，121/100满分，约束与我们100%一致，推荐借鉴MMIO地址译码模式
-  - SEU-Class2：Minisys 5级流水线MIPS 57条指令+CP0，推荐共享总线+仲裁器+统一外设接口作为架构骨架
-  - SEU-Group16：VHDL+Verilog混合MIPS，BTB分支预测+CP0+ALU六分类，推荐ALU分类方法
+  - SEU minisys：Minisys 5级流水线MIPS 57条指令+CP0，推荐共享总线+仲裁器+统一外设接口作为架构骨架
+  - SEU minisys：VHDL+Verilog混合MIPS，BTB分支预测+CP0+ALU六分类，推荐ALU分类方法
   - riscv-minisys-cpu：北京邮电大学RV32I单周期CPU，31条指令，与我们的ISA完全一致，推荐译码框架
   - minisys_unified：已整合4种CPU的统一项目，推荐generate块+CPU_MODE参数化设计+统一总线顶层
-  - 生成完整的四仓库深度合并方案，包含架构选型、组件来源决策表、MIPS→RV32I改造路径、统一接口规范、6阶段实施计划
+  - 生成完整的五仓库深度合并方案，包含架构选型、组件来源决策表、MIPS→RV32I改造路径、统一接口规范、6阶段实施计划
 - 人工审阅点：
   - 逐仓库验证分析结论是否准确
   - 确认MIPS→RV32I改造路径的正确性
@@ -188,13 +188,13 @@
 - 成员：刘文涛
 - 负责模块：代码级深度合并 —— 24个RTL文件生成 + 整合报告 + 文档同步
 - 工具：Codex
-- 使用阶段：在Project-based Curriculum Stage中生成完整统一项目，从minisys_unified提取框架、从riscv-minisys-cpu提取RV32I译码模式、从SEU-Class2提取总线系统、加入MAC和perf_counter独创模块
+- 使用阶段：在Project-based Curriculum Stage中生成完整统一项目，从minisys_unified提取框架、从riscv-minisys-cpu提取RV32I译码模式、从SEU minisys提取总线系统、加入MAC和perf_counter独创模块
 - 涉及文件：
   - 新生成RTL（24个）：`src/core/public.vh`、`alu.v`、`regfile.v`、`control_unit.v`、`imm_gen.v`、`branch_unit.v`、`pc_reg.v`、`mac_unit.v`、`csr_perf_counter.v`、`riscv_mc_cpu.v`、`riscv_mc_wrapper.v`、`cpu_top.v`、`src/bus/bus_decoder.v`、`bus_mux.v`、`src/memory/inst_ram.v`、`data_ram.v`、`src/io/gpio_led.v`、`gpio_switch.v`、`seg7_driver.v`、`src/common/sync.v`、`debounce.v`、`edge_det.v`、`src/soc/soc_top.v`、`src/board/minisys_top.v`
   - 更新文档（7个）：`README.md`、`docs/design/memory_map.md`、`docs/design/task_board.md`、`docs/team/member_roles.md`、`docs/PROJECT_INDEX.md`、`docs/ai_logs/ai_usage_log.md`、`docs/planning/integration_report.md`
   - 新增文档（2个）：`docs/planning/four_repo_deep_merge_plan.md`、`docs/planning/integration_report.md`
   - 测试文件（2个）：`tests/basic/basic_test.S`、`sim/programs/basic_test.hex`
-- 提示词摘要：要求 Codex 基于分析结论和合并方案，从 minisys_unified 提取统一总线框架，从 riscv-minisys-cpu 提取 RV32I 译码模式，从 SEU-Class2 提取总线仲裁器，适配到 Project-based Curriculum Stage 中，生成完整的统一项目。验证一致性（约束/ISA/接口/内存映射），撰写整合报告，同步所有markdown文档，重新规划ABCD分工。
+- 提示词摘要：要求 Codex 基于分析结论和合并方案，从 minisys_unified 提取统一总线框架，从 riscv-minisys-cpu 提取 RV32I 译码模式，从 SEU minisys 提取总线仲裁器，适配到 Project-based Curriculum Stage 中，生成完整的统一项目。验证一致性（约束/ISA/接口/内存映射），撰写整合报告，同步所有markdown文档，重新规划ABCD分工。
 - AI 输出摘要：
   - `public.vh`（280行）：全局宏定义，覆盖RV32I+MIPS双ISA编码+总线宽度+内存映射+外设地址+ALU六分类+CPU_MODE
   - 总线系统：ibus+dbus共享总线，14选1仲裁器，addr[9:4]二级地址译码
@@ -214,7 +214,7 @@
   - 确认统一总线地址（0xFFFF_FCxx）与SEU参考设计兼容且不与Data Memory冲突
 - 人工修改内容：
   - 修正memory_map.md地址映射与bus_decoder.v的差异
-  - 协调ALU六分类（SEU-Group16）与RV32I操作码的映射
+  - 协调ALU六分类（SEU minisys）与RV32I操作码的映射
   - 确保control_unit.v覆盖所有31条RV32I指令和MAC
   - 确保soc_top.v端口与minisys_top.v能正确对接
   - 重新规划ABCD分工（A承担代码整合工作，B/C/D任务前移）
@@ -610,3 +610,46 @@
 - 备注：
   - 本记录覆盖 A 在 2026-07-09 的文档同步工作，属于项目管理类 AI 使用，不涉及 RTL 或 Vivado 操作
   - B 的综合数据来源于 AI-20260709-02，A 仅做文档层面的同步和格式化
+
+### 记录编号：AI-20260709-05
+
+- 日期：2026-07-09
+- 成员：刘文涛
+- 负责模块：文档准确性修正、参考资料溯源审计
+- 工具：Claude Code
+- 使用阶段：
+  - 核实 `reference_repos/` 实际目录内容，发现文档中长期引用的 "SEU-Class2 (z0gSh1u)" 和 "SEU-Group16 (Yuqifan1117)" 在本地仓库中并不存在，实际仅有 `minisys-master/` 一个 SEU 仓库
+  - `minisys_unified/PROJECT_REFERENCE.md` 确认 SEU minisys 的所有代码（共享总线仲裁器、ALU六分类、BTB、CP0 等）已整合在 `rtl/cpu/mips_pipe_adv/` 中
+  - 全量修正 15 个文件中的错误引用：将所有 "SEU-Class2" 和 "SEU-Group16" 统一为 "SEU minisys (minisys-master)"，将引用仓库数从"六个"修正为"五个"，移除不存在的 GitHub 用户名
+  - 同步分析 D（王博生）的任务依赖：C 的上板工作与 D 的 testbench/程序开发无依赖关系，D 可立即启动 mac_unit 单测、perf_counter 单测、点积测试程序共 4 项 P1 任务
+- 涉及文件：
+  - 规划文档：`docs/planning/integration_report.md`、`docs/planning/four_repo_deep_merge_plan.md`、`docs/planning/compliance_check_report.md`、`docs/planning/progress_checklist.md`、`docs/planning/optimization_roadmap.md`
+  - 设计文档：`docs/design/memory_map.md`、`docs/design/interfaces.md`、`docs/design/task_board.md`
+  - 索引与日志：`docs/PROJECT_INDEX.md`、`docs/ai_logs/ai_declaration.md`、`docs/ai_logs/ai_usage_log.md`（本文件）
+  - RTL 头注释：`src/core/alu.v`、`src/core/control_unit.v`、`src/core/pc_reg.v`、`src/core/public.vh`
+  - 修改量：105 insertions(+), 114 deletions(-)，15 个文件
+- 提示词摘要：用户发现 `processor_fpga/minisys_top.bit` 找不到、询问队友提交记录、质疑参考仓库来源；要求核实 SEU-Class2/SEU-Group16 的实际来源、修正所有相关文档、分析 D 的任务依赖关系
+- AI 输出摘要：
+  - 确认 `processor_fpga/` 目录因 `.gitignore` 通配符不匹配被意外提交（已在 AI-20260709-04 中修复 `.gitignore`）
+  - 确认队友 B（张淇）的提交显示为 "Evelyn" 是因为本地 git user.name 配置不同
+  - 确认 `reference_repos/` 实际包含 5 个仓库（NCUT_MiniSys-main、SUSTech_CS202、minisys-master、minisys_unified、riscv-minisys-cpu-main），无 SEU-Class2 和 SEU-Group16 独立仓库
+  - 判断 D 可立即启动 4 项 P1 任务（mac_unit/perf_counter 单测 + 普通/MAC 点积程序），C 的上板工作独立不阻塞
+- 人工审阅点：
+  - 人工核对 `reference_repos/` 实际目录列表与文档引用的一致性
+  - 人工核对 `minisys_unified/PROJECT_REFERENCE.md` §11.5 确认 SEU minisys 文件来源
+  - 人工核对修正后的 `integration_report.md` 仓库表格和章节编号
+- 人工修改内容：
+  - 修正 integration_report.md 仓库数量（6→5）、合并 §2.3 和 §2.4 为单一 "SEU minisys" 章节、更新章节编号
+  - 手动修复 sed 批量替换引起的重复命名（如 "SEU minisys + SEU minisys" → 单一引用）
+- 验证方式：
+  - `grep -rn "SEU-Class2\|SEU-Group16"` 确认仅 `integration_report.md` 的历史说明段落保留旧名（作为解释上下文），其余全部清除
+  - `grep -rn "z0gSh1u\|Yuqifan"` 确认零残留
+  - `git diff --stat` 确认 15 个文件修改范围正确
+- 验证结果：
+  - 全部 15 个文件引用修正完成，仓库来源描述与 `reference_repos/` 实际内容一致
+  - 文档间交叉引用一致
+- 是否合并：待提交
+- 备注：
+  - 本记录覆盖 A 在 2026-07-09 的文档审计和修正工作，属于项目管理和质量保障类 AI 使用，不涉及 RTL 设计变更
+  - 根本原因：早期 AI（Codex）在生成文档时可能基于训练数据中的 GitHub 用户名（z0gSh1u/Yuqifan1117）虚构了两个独立仓库名，实际均为 SEU minisys 项目
+  - RTL 头注释的修改仅涉及注释文本，不影响功能

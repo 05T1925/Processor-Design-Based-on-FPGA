@@ -1,7 +1,7 @@
 //==============================================================================
 // control_unit.v - RV32I Control Unit (Instruction Decoder)
 //
-// Based on: riscv-minisys-cpu + SEU-Class2 id.v frameworks
+// Based on: riscv-minisys-cpu + SEU minisys (minisys-master) id.v frameworks
 //
 // Decodes RV32I opcode/funct3/funct7 into control signals.
 // Supports: ADD, SUB, AND, OR, XOR, SLL, SRL, SRA, SLT, SLTU,

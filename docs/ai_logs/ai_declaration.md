@@ -20,9 +20,9 @@
 |---|---|---|---|
 | RV32I 子集指令选择（31条+MAC） | A 刘文涛 | AI辅助分析 | 组长A基于课程任务书和RV32I规范手册，人工确定指令子集范围。AI仅辅助生成编码对照表，所有编码已与RISC-V官方规范逐条人工核对 |
 | MAC自定义指令语义定义（rd_new=rd_old+rs1*rs2） | A+D | AI辅助优化 | 组长A独立提出三读口方案，AI辅助分析寄存器堆修改点 |
-| memory map 地址空间划分 | A | AI辅助分析 | 组长A对比SEU-Class2和SUSTech CS202两个MMIO方案后独立决策采用统一总线地址（0xFFFF_FCxx），AI仅辅助生成地址映射表 |
+| memory map 地址空间划分 | A | AI辅助分析 | 组长A对比SEU minisys和SUSTech CS202两个MMIO方案后独立决策采用统一总线地址（0xFFFF_FCxx），AI仅辅助生成地址映射表 |
 | 模块接口规范（interfaces.md） | A | AI辅助整理 | 组长A设计接口，AI辅助生成端口表，所有端口定义经组长A人工确认 |
-| 统一总线架构设计 | A | AI辅助分析 | 组长A分析SEU-Class2的共享总线仲裁器设计后独立决定采用ibus+dbus双总线+addr[9:4]二级译码方案 |
+| 统一总线架构设计 | A | AI辅助分析 | 组长A分析SEU minisys的共享总线仲裁器设计后独立决定采用ibus+dbus双总线+addr[9:4]二级译码方案 |
 
 ---
 
@@ -34,8 +34,8 @@
 |---|---|---|---|
 | NCUT_MiniSys (kayak4665664) | MIPS 31条 | 5级流水线 | GPL-3.0 |
 | SUSTech CS202 (OctCarp) | MIPS子集 | 单周期 | MIT |
-| SEU-Class2 (seu-cs-class2) | MIPS 57条 | 5级流水线+CP0 | 未声明 |
-| SEU-Group16 (Yuqifan1117) | MIPS 57条+ | 5级流水线+BTB | 未声明 |
+| SEU minisys (seu-cs-class2) | MIPS 57条 | 5级流水线+CP0 | 未声明 |
+| SEU minisys () | MIPS 57条+ | 5级流水线+BTB | 未声明 |
 | riscv-minisys-cpu (BUPT) | RV32I 31条 | 单周期 | 未声明 |
 | minisys_unified (组长A初版) | MIPS+RV32I | 4合1统一 | GPL-3.0 |
 
@@ -43,13 +43,13 @@
 
 | 本项目的模块 | 参考来源 | 原始内容 | 改造内容 | 改造原因 | 独立设计占比 |
 |---|---|---|---|---|---|
-| `public.vh` | SEU-Class2 `public.v` + SEU-Group16 `define.v` | MIPS opcode定义 + ALU六分类 | 完全重写：增加RV32I opcode/funct3/funct7 + MAC编码 + 总线宽度 + 外设地址 + CPU_MODE | 参考仓库只有MIPS定义，需要为RV32I重新设计全部宏 | 85% |
+| `public.vh` | SEU minisys `public.v` + `define.v` | MIPS opcode定义 + ALU六分类 | 完全重写：增加RV32I opcode/funct3/funct7 + MAC编码 + 总线宽度 + 外设地址 + CPU_MODE | 参考仓库只有MIPS定义，需要为RV32I重新设计全部宏 | 85% |
 | `control_unit.v` | riscv-minisys-cpu `control_unit.v` | RV32I单周期译码，无MAC/FSM/instret | 重写：采用相同opcode驱动框架，增加MAC custom-0译码、EBREAK检测、illegal_instr标记、instret_pulse/mac_pulse、多周期FSM适配 | 原始为单周期纯组合译码，需改造为多周期FSM兼容的译码方式 | 70% |
 | `riscv_mc_cpu.v` | riscv-minisys-cpu `riscv_cpu.v` | RV32I单周期CPU | 完全重写：从单周期组合逻辑改为6状态FSM（FETCH/DECODE/EXECUTE/MEMORY/WRITEBACK/HALT），增加perf_counter集成、MAC数据通路 | 原始为单周期（1指令=1周期），本设计要求多周期FSM | 90% |
-| `alu.v` | SEU-Group16 `Ex_1.v` + riscv-minisys-cpu `alu.v` | MIPS ALU 3分类 / RV32I ALU 4-bit op | 重写：采用SEU的6分类体系（NOP/ARITH/LOGIC/MOVE/SHIFT/JUMP），增加MAC类型，操作码全部改为RV32I | MIPS ALU操作码编码方案与RV32I不兼容 | 75% |
+| `alu.v` | SEU minisys `Ex_1.v` + riscv-minisys-cpu `alu.v` | MIPS ALU 3分类 / RV32I ALU 4-bit op | 重写：采用SEU的6分类体系（NOP/ARITH/LOGIC/MOVE/SHIFT/JUMP），增加MAC类型，操作码全部改为RV32I | MIPS ALU操作码编码方案与RV32I不兼容 | 75% |
 | `regfile.v` | NCUT `regfile.v` | 2读1写，无MAC第三读口 | 改造：增加MAC第三读口（rd_old），保留NCUT的内部写后读前推逻辑，x0硬连线 | MAC需要同时读取rd原值作为累加器输入 | 50% |
-| `bus_decoder.v` | SEU-Class2 `arbitration.v` | MIPS外设地址（0xFFFF_FCxx），10个外设 | 轻改造：扩充到14个外设槽位，增加perf_counters和result_reg | 外设种类不同 | 30% |
-| `bus_mux.v` | SEU-Class2 `arbitration.v` | 10路MUX | 轻改造：扩充到14路MUX | 外设数量增加 | 20% |
+| `bus_decoder.v` | SEU minisys `arbitration.v` | MIPS外设地址（0xFFFF_FCxx），10个外设 | 轻改造：扩充到14个外设槽位，增加perf_counters和result_reg | 外设种类不同 | 30% |
+| `bus_mux.v` | SEU minisys `arbitration.v` | 10路MUX | 轻改造：扩充到14路MUX | 外设数量增加 | 20% |
 | `soc_top.v` | minisys_unified `top_minisys.v` | 4 CPU_MODE + 12外设 | 改造：简化为本项目的CPU_MODE=0主线，移除VGA/键盘/PS2等未使用外设的完整实例化 | 本项目仅需P0外设 | 40% |
 | `mac_unit.v` | — | 无参考 | **完全独立设计**：组合逻辑乘加，低32位取积，DSP48E1推断 | 参考仓库均无MAC指令 | 100% |
 | `csr_perf_counter.v` | — | 无参考 | **完全独立设计**：3×32bit计数器，halted停止cycle，pulse驱动instret/mac | 参考仓库均无性能计数器 | 100% |

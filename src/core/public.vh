@@ -1,7 +1,7 @@
 //==============================================================================
 // public.vh - Global Definitions for Unified RV32I+MIPS CPU Project
 //
-// Based on: minisys_unified + SEU-Class2 public.v + SEU-Group16 define.v
+// Based on: minisys_unified + SEU minisys (minisys-master) public.v + define.v
 // Adapted for RV32I-primary with MAC extension and MIPS compatibility modes.
 //
 // Usage: `include "public.vh" in all RTL modules
@@ -66,7 +66,7 @@
 `define MIPS_ADDR_RANGE  25:0
 
 //------------------------------------------------------------------------------
-// ALU Operation Types (6-category classification from SEU-Group16)
+// ALU Operation Types (6-category classification from SEU minisys)
 //------------------------------------------------------------------------------
 `define ALUOP_BUS        7:0
 `define ALUTYPE_BUS      2:0
@@ -168,7 +168,7 @@
 `define BUS_BYTE_SEL_WIDTH 4
 
 //------------------------------------------------------------------------------
-// Unified Bus Signals (SEU-Class2 standard)
+// Unified Bus Signals (SEU minisys standard)
 // ibus (instruction bus): CPU -> inst_ram (read-only)
 //   ibus_addr[31:0]   output  instruction address
 //   ibus_rdata[31:0]  input   instruction data

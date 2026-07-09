@@ -51,8 +51,8 @@
 **与本项目现有基础的契合度**：⭐⭐⭐⭐⭐
 - NCUT_MiniSys：完整的五级流水线寄存器模板（`if_id.v`/`id_ex.v`/`ex_mem.v`/`mem_wb.v`）
 - NCUT_MiniSys `id.v`：ID 阶段数据前推逻辑（EX/MEM/WB三级前推）
-- SEU-Group16 `BTB.v`：分支目标缓冲参考实现
-- SEU-Class2 `ppl_scheduler.v`：流水线调度器
+- SEU minisys `BTB.v`：分支目标缓冲参考实现
+- SEU minisys `ppl_scheduler.v`：流水线调度器
 
 **实现路径**：
 ```
@@ -121,8 +121,8 @@ Cache      → 替换策略对比(LRU/PLRU/FIFO/Random)
 - FP32 ADD/MUL：流水线化后 1 IPC
 
 **与本项目现有基础的契合度**：⭐⭐
-- SEU-Class2 `mul.v`：硬件乘法器参考
-- SEU-Class2 `div` 相关：HI/LO 乘除框架可改造
+- SEU minisys `mul.v`：硬件乘法器参考
+- SEU minisys `div` 相关：HI/LO 乘除框架可改造
 - 但架构从多周期→流水线改造工作量巨大
 - FP32 在 MIPS 参考仓库中均未实现
 
@@ -136,7 +136,7 @@ MAC(组合乘加) → MUL/DIV指令    → FP32
 **风险**：
 - 高：FP32 合规实现工作量远超一周项目范围
 - 中：硬件除法器面积大，时序可能成为瓶颈
-- **建议**：P1 做 MUL/DIV（RV32I M扩展子集），这也是 SEU-Class2 已有的方向，FP32 留给后续课程
+- **建议**：P1 做 MUL/DIV（RV32I M扩展子集），这也是 SEU minisys 已有的方向，FP32 留给后续课程
 
 ---
 
@@ -232,7 +232,7 @@ CPU_MODE=0: RV32I 多周期FSM   (基线)
 CPU_MODE=1: RV32I 单周期      (对比方案1)
 CPU_MODE=2: MIPS 单周期       (对比方案2, 参考SUSTech CS202)
 CPU_MODE=3: MIPS 5级流水线    (对比方案3, 参考NCUT)
-CPU_MODE=4: MIPS 5级+CP0     (对比方案4, 参考SEU-Class2)
+CPU_MODE=4: MIPS 5级+CP0     (对比方案4, 参考SEU minisys)
 ```
 同一 Vivado 工程切换参数即可对比，这是本项目独有的**PPA 实验平台**。
 
@@ -299,7 +299,7 @@ CPU_MODE=4: MIPS 5级+CP0     (对比方案4, 参考SEU-Class2)
 Day 1-2 (P1-1): 五级流水线 + forwarding + stall/flush
   ├── D: 实现流水线寄存器 (参考NCUT if_id/id_ex/ex_mem/mem_wb)
   ├── D+B: 实现 forwarding_unit (参考NCUT id.v前推逻辑)
-  ├── D+B: 实现 hazard_detection (参考SEU-Class2 ppl_scheduler)
+  ├── D+B: 实现 hazard_detection (参考SEU minisys ppl_scheduler)
   ├── B: xsim验证流水线CPU跑通basic program
   └── D: 记录IPC提升数据
 
@@ -307,12 +307,12 @@ Day 3-4 (P1-2 + P1-3): PPA对比 + MUL/DIV扩展
   ├── C: Vivado 综合多周期FSM版本 → utilization/timing
   ├── C: Vivado 综合流水线版本 → utilization/timing
   ├── D: 对比数据填充PPA表格
-  ├── D: 实现 MUL/DIV 指令（参考SEU-Class2 mul.v）
+  ├── D: 实现 MUL/DIV 指令（参考SEU minisys mul.v）
   ├── B: 验证 MUL/DIV 指令
   └── A: 复检PPA数据，统一报告口径
 
 Day 5-6 (P1继续 + P2): 冲刺项
-  ├── D: BTB分支预测 (参考SEU-Group16 BTB.v)
+  ├── D: BTB分支预测 (参考SEU minisys BTB.v)
   ├── C: (如有时间) DSP48E1 例化精调
   ├── D: 点积程序优化对比
   ├── B+C+D: 各自的报告小节

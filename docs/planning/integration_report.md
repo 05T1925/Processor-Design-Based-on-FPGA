@@ -13,16 +13,15 @@
 
 项目原始状态只有设计文档（ISA、memory map、interfaces）和一个 `minisys_top.v` 外壳。所有 RTL 源码目录（`src/core/`、`src/memory/`、`src/io/`、`src/soc/`）均为空目录。
 
-为了加速开发、借鉴成熟设计模式、避免从零造轮子，组长 A 对四个经过验证的 Minisys 开源 FPGA 项目 + 一个 RISC-V 参考项目 + 一个已初步统一的参考项目进行了深度分析：
+为了加速开发、借鉴成熟设计模式、避免从零造轮子，组长 A 对五个经过验证的 Minisys 开源 FPGA 项目进行了深度分析（注：此前文档中的 "SEU-Class2" 和 "SEU-Group16" 实际为同一仓库 SEU minisys / minisys-master）：
 
 | 仓库 | 来源 | 架构 | ISA | 验证状态 | 分析文档 |
 |---|---|---|---|---|---|
 | NCUT_MiniSys | 北方工业大学 | 5级流水线 | MIPS 31条 | 仿真通过 | 本文档第二章 |
 | SUSTech CS202 | 南方科技大学 | 单周期 | MIPS子集 | **Minisys上板 121/100** | 本文档第三章 |
-| SEU-Class2 | 东南大学 | 5级流水线+CP0 | MIPS 57条 | 仿真通过 | 本文档第四章 |
-| SEU-Group16 | 东南大学第16组 | 5级流水线+BTB | MIPS 57条+ | 仿真通过 | 本文档第五章 |
+| SEU minisys | 东南大学 | 5级流水线+CP0+BTB | MIPS 57条 | 仿真通过 | `minisys-master/`（含ALC六分类/仲裁器/BTB/CP0/mul等全部模块） |
 | riscv-minisys-cpu | 北京邮电大学 | 单周期 | **RV32I 31条** | 仿真通过 | 追加分析 |
-| minisys_unified | 组长A初版整合 | 4合1统一 | MIPS+RV32I | 未验证 | 主要框架来源 |
+| minisys_unified | 组长A预整合 | 4合1统一总线 | MIPS+RV32I | 框架来源 | `reference_repos/minisys_unified/`（已内含SEU全部代码于rtl/cpu/mips_pipe_adv/） |
 
 ### 1.2 合并的核心思路
 
@@ -30,7 +29,7 @@
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│ 步骤1: 分析6个参考仓库，提取各仓库的核心设计模式                     │
+│ 步骤1: 分析5个参考仓库（本地reference_repos/），提取各仓库的核心设计模式      │
 │                                                                 │
 │ 步骤2: 确定本项目不可动摇的底线：                                  │
 │   · ISA = RV32I 子集（不是MIPS）                                  │
@@ -38,10 +37,10 @@
 │   · 独有亮点 = MAC自定义指令 + 性能计数器                           │
 │   · 平台 = Minisys FPGA (Artix-7 XC7A100T) + EES-329B-V1.1      │
 │                                                                 │
-│ 步骤3: 从6个仓库中选取最佳设计模式，适配到RV32I：                    │
-│   · 总线架构 → SEU-Class2 共享总线 + 仲裁器                        │
+│ 步骤3: 从5个仓库中选取最佳设计模式，适配到RV32I：                    │
+│   · 总线架构 → SEU minisys 共享总线 + 仲裁器                       │
 │   · 外设接口 → 统一6端口 slave 接口                                │
-│   · ALU设计 → SEU-Group16 六分类方法                              │
+│   · ALU设计 → SEU minisys 六分类方法                               │
 │   · 寄存器堆 → NCUT 内部前推模式                                   │
 │   · CPU切换 → minisys_unified generate块模式                      │
 │   · RV32I译码 → riscv-minisys-cpu opcode驱动                      │
@@ -61,7 +60,7 @@
 
 ---
 
-## 二、六仓库选型分析
+## 二、五仓库选型分析
 
 ### 2.1 NCUT_MiniSys → 寄存器堆前推 + 流水线寄存器模板
 
@@ -84,33 +83,25 @@
 - 单周期架构（非多周期FSM）
 - 外设接口非标准化
 
-### 2.3 SEU-Class2 → ★ 共享总线 + 仲裁器 + 统一外设接口（核心借鉴）
+### 2.3 SEU minisys → ★ 共享总线 + ALU六分类 + BTB + CP0（核心借鉴）
+
+> **说明**：文档早期将 SEU minisys 项目（`reference_repos/minisys-master/`）的代码按模块拆分为 "SEU-Class2"（总线/仲裁器/外设接口）和 "SEU-Group16"（ALU分类/BTB/CP0）两个名称。实际上它们来自同一个仓库。`minisys_unified` 已将 SEU minisys 代码整合进 `rtl/cpu/mips_pipe_adv/`，本项目通过 `minisys_unified` 间接获取。
 
 **可取之处（最多，作为本项目架构骨架）**：
 - `arbitration.v`：读数据总线仲裁器 → 改造为本项目的 `bus_mux.v`
 - `minisys.v` 顶层：CPU + 总线 + 外设的连接模式 → `soc_top.v` 结构
 - 外设统一6端口接口（clk/rst/addr/en/byte_sel/data_in/we/data_out）→ 全部外设采用
-- `public.v` 宏定义体系 → `public.vh` 的设计模板
+- `public.v` / `define.v` 宏定义体系 + ALU 六分类（NOP/ARITH/LOGIC/MOVE/SHIFT/JUMP）→ `public.vh` 采用并增加 `ALUTYPE_MAC`
 - `cpu_top.v` generate块模式选择 → 直接采用
+- `BTB.v`：分支目标缓冲 → P2 流水线冲刺预留
+- `CP0.v`：MIPS 协处理器异常框架 → P2 CSR 改造参考
 
 **不可直接用的原因**：
 - MIPS 57条指令集（包含 HI/LO/CP0 等 MIPS 特有功能）
 - 5级流水线（第一版用多周期）
 - 乘除硬件单元（我们做MAC乘加，不做除）
 
-### 2.4 SEU-Group16 → ALU六分类 + BTB分支预测 + CP0异常
-
-**可取之处**：
-- `define.v` 的 ALU 六分类（NOP/ARITH/LOGIC/MOVE/SHIFT/JUMP）→ `public.vh` 采用并增加 `ALUTYPE_MAC`
-- `BTB.v`：分支目标缓冲 → P2 流水线冲刺预留
-- `CP0.v`：MIPS 协处理器异常框架 → P2 CSR 改造参考
-
-**不可直接用的原因**：
-- VHDL 为主（77.3%），本项目统一使用 Verilog
-- MIPS ISA
-- 5级流水线（非多周期）
-
-### 2.5 riscv-minisys-cpu → ★ RV32I 指令译码框架（直接参考）
+### 2.4 riscv-minisys-cpu → ★ RV32I 指令译码框架（直接参考）
 
 **可取之处（最多，因为ISA一致）**：
 - `control_unit.v`：RV32I opcode/funct3/funct7 译码框架 → 本项目 `control_unit.v` 的蓝图
@@ -126,7 +117,7 @@
 - 总线为直连模式（非统一共享总线）
 - `mem_map.v` 的地址映射与我们选定的统一总线不一致
 
-### 2.6 minisys_unified → ★★ 统一框架蓝图（最关键的参考）
+### 2.5 minisys_unified → ★★ 统一框架蓝图（最关键的参考）
 
 **可取之处（作为整体框架模板）**：
 - `cpu_top.v` 的 generate 块 + CPU_MODE 参数化选择 → 直接采用
@@ -148,7 +139,7 @@
 
 ### 决策1：总线地址空间的选择
 
-**问题**：旧版 `memory_map.md` 将 MMIO 放在 `0x1000_0xxx`，但 SEU-Class2 统一总线使用 `0xFFFF_FCxx` 作为外设区。
+**问题**：旧版 `memory_map.md` 将 MMIO 放在 `0x1000_0xxx`，但 SEU minisys 统一总线使用 `0xFFFF_FCxx` 作为外设区。
 
 **分析**：
 - 方案A：修改 bus_decoder 适配旧版地址（工作量大，且失去与参考设计的兼容性）
@@ -158,7 +149,7 @@
 
 **理由**：
 1. `0xFFFF_FCxx` 与 Data Memory 区（`0x1000_xxxx`）完全分离，不会发生地址冲突
-2. 所有借鉴自 SEU-Class2 的外设控制器（LED/Switch/SEG7）原生支持该地址
+2. 所有借鉴自 SEU minisys 的外设控制器（LED/Switch/SEG7）原生支持该地址
 3. 参考仓库中的测试程序可直接适配（仅需修改地址常量）
 4. `addr[9:4]` 二级译码方式扩展性强，最多支持 16 个外设
 
@@ -168,10 +159,10 @@
 
 **分析**：
 - riscv-minisys-cpu 使用 4-bit alu_op
-- SEU-Group16 使用 8-bit alu_op + 3-bit alu_type（六分类）
+- SEU minisys 使用 8-bit alu_op + 3-bit alu_type（六分类）
 - 本项目需要同时支持 RV32I 基础运算和 MAC 乘加
 
-**选择**：采用 SEU-Group16 的六分类方案并扩展。
+**选择**：采用 SEU minisys 的六分类方案并扩展。
 
 **理由**：
 1. `alu_type`（NOP/ARITH/LOGIC/MOVE/SHIFT/JUMP/MAC）使 ALU 结构清晰可维护
@@ -227,7 +218,7 @@ endmodule
 
 ### 4.1 板级约束验证 ✓
 
-| 检查项 | minisys.xdc | minisys_top.v | SUSTech minisys_cons.xdc | SEU-Class2 XDC | 结果 |
+| 检查项 | minisys.xdc | minisys_top.v | SUSTech minisys_cons.xdc | SEU minisys XDC | 结果 |
 |---|---|---|---|---|---|
 | clk 引脚 | Y18 | `input clk` | Y18 (fpga_clk) | Y18 (board_clk) | ✅ 一致 |
 | rst 引脚 | P20 | `input rst_n` | P20 (fpga_rst) | P20 (board_rst) | ✅ 一致 |
@@ -262,7 +253,7 @@ endmodule
 | 模块 | interfaces.md 定义 | RTL 实现 | 差异说明 | 结果 |
 |---|---|---|---|---|
 | regfile | 3读1写，含 rd_old | `regfile.v` 3读1写 + 内部前推 | 增加内部前推（优化） | ✅ |
-| alu | a/b/alu_op/result/zero | 增加 `alu_type` | SEU-Group16六分类扩展 | ✅ |
+| alu | a/b/alu_op/result/zero | 增加 `alu_type` | SEU minisys六分类扩展 | ✅ |
 | mac_unit | rs1/rs2/rd_old → mac_result | 完全匹配 | ✅ |
 | csr_perf_counter | clk/rst/halted/instret/mac → counters | 完全匹配 | ✅ |
 | control_unit | instr → 控制信号 | 扩展了更多信号 | 硬件实现需更多细节信号 | ✅ |

@@ -1,4 +1,4 @@
-# 四仓库深度合并方案
+# 五仓库深度合并方案
 
 > 基于 Minisys FPGA + EES-329B-V1.1 子板，将四个开源 MIPS 仓库的设计精华深度合并到本项目 RV32I 多周期/流水线 CPU + SoC 体系中。
 >
@@ -13,18 +13,18 @@
 1. **ISA 不可动摇**：坚持 RV32I 子集 + MAC 自定义指令，不退回 MIPS
 2. **渐进式架构演进**：以多周期 FSM 为保底基线 → 五级流水线为 P1/P2 冲刺
 3. **组件级借鉴**：从四个 MIPS 仓库提取可复用的硬件设计模式，改造为 RV32I 语义
-4. **总线统一**：采用 SEU-Class2 的共享总线 + 仲裁器模式，统一本项目 MMIO
+4. **总线统一**：采用 SEU minisys 的共享总线 + 仲裁器模式，统一本项目 MMIO
 5. **外设标准化**：采用统一的 6 端口外设接口规范
 6. **保底优先**：任何时候 `main` 分支保留可综合、可仿真版本
 
-### 0.2 四仓库角色定位
+### 0.2 五仓库角色定位
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │  ① NCUT_MiniSys        →  流水线寄存器模板 + regfile前推模式    │
 │  ② SUSTech CS202       →  Minisys约束验证 + MMIO地址译码模式   │
-│  ③ SEU-Class2          →  ★ 共享总线+仲裁器 + 统一外设接口     │
-│  ④ SEU-Group16         →  BTB分支预测 + CP0异常框架 + ALU分类   │
+│  ③ SEU minisys          →  ★ 共享总线+仲裁器 + 统一外设接口     │
+│  ④ SEU minisys         →  BTB分支预测 + CP0异常框架 + ALU分类   │
 │  本项目现有             →  RV32I ISA + MAC + 多周期FSM + Perf   │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -57,20 +57,20 @@ Minisys Board (XC7A100T) + EES-329B-V1.1
         ├── cpu_top (多周期FSM)           ← 借鉴 NCUT 的 FSM 组织
         │   ├── pc_reg                   ← 借鉴 NCUT pc_reg
         │   ├── regfile (3读1写)          ← 借鉴 NCUT regfile + 本项目rd_old
-        │   ├── alu                      ← 借鉴 SEU-Group16 ALU六分类
-        │   ├── control_unit (RV32I译码)  ← 改造自 SEU-Class2 译码框架
+        │   ├── alu                      ← 借鉴 SEU minisys ALU六分类
+        │   ├── control_unit (RV32I译码)  ← 改造自 SEU minisys 译码框架
         │   ├── imm_gen                  ← RV32I立即数生成
         │   ├── branch_unit              ← RV32I分支判断
         │   ├── mac_unit                 ← 本项目独创
         │   └── csr_perf_counter         ← 本项目独创
-        ├── mem_bus (总线仲裁器)          ← ★ 借鉴 SEU-Class2 arbitration
+        ├── mem_bus (总线仲裁器)          ← ★ 借鉴 SEU minisys arbitration
         │   ├── instr_mem (BRAM)         ← 借鉴 SUSTech inst_rom
         │   ├── data_mem (BRAM)          ← 借鉴 SUSTech data_ram
-        │   └── mmio_decoder             ← 借鉴 SEU-Class2 IO地址译码
+        │   └── mmio_decoder             ← 借鉴 SEU minisys IO地址译码
         └── io_devices                   ← 统一6端口外设接口
-            ├── gpio_led                 ← 借鉴 SEU-Class2/SUSTech
-            ├── gpio_switch              ← 借鉴 SEU-Class2/SUSTech
-            └── seg7_driver              ← 借鉴 SEU-Group16 nixieTube
+            ├── gpio_led                 ← 借鉴 SEU minisys/SUSTech
+            ├── gpio_switch              ← 借鉴 SEU minisys/SUSTech
+            └── seg7_driver              ← 借鉴 SEU minisys nixieTube
 ```
 
 ### 1.3 P1/P2 流水线架构（冲刺阶段）
@@ -78,9 +78,9 @@ Minisys Board (XC7A100T) + EES-329B-V1.1
 ```text
 cpu_top (5级流水线)
 ├── IF Stage
-│   ├── pc_reg + BTB (借鉴 SEU-Group16 BTB.v)
+│   ├── pc_reg + BTB (借鉴 SEU minisys BTB.v)
 │   ├── instr_mem_iface
-│   └── if_id  (借鉴 NCUT/SEU-Class2 流水线寄存器)
+│   └── if_id  (借鉴 NCUT/SEU minisys 流水线寄存器)
 ├── ID Stage
 │   ├── regfile (3读1写)
 │   ├── control_unit + 数据前推 (借鉴 NCUT id.v 前推逻辑)
@@ -89,7 +89,7 @@ cpu_top (5级流水线)
 ├── EX Stage
 │   ├── alu (6类运算: NOP/ARITH/LOGIC/MOVE/SHIFT/JUMP)
 │   ├── mac_unit (流水线化)
-│   ├── mul/div (借鉴 SEU-Class2 mul.v)
+│   ├── mul/div (借鉴 SEU minisys mul.v)
 │   ├── branch_unit + forwarding mux
 │   └── ex_mem
 ├── MEM Stage
@@ -108,10 +108,10 @@ cpu_top (5级流水线)
 
 | 组件 | P0 来源 | P1/P2 来源 | 改造说明 |
 |---|---|---|---|
-| **pc_reg** | ③ SEU-Class2 `pc.v` | ④ SEU-Group16 + BTB | 改为 RV32I 的 `pc+4`，去掉延迟槽 |
+| **pc_reg** | ③ SEU minisys `pc.v` | ④ SEU minisys + BTB | 改为 RV32I 的 `pc+4`，去掉延迟槽 |
 | **regfile** | ① NCUT `regfile.v` + 本项目 `rd_old` | 同左 | 3读1写，x0=0，内部前推 |
-| **alu** | ④ SEU-Group16 ALU六分类 | 同左，加流水线级 | RV32I 操作码映射到 6 类 ALU 操作 |
-| **control_unit** | ③ SEU-Class2 `id.v` 框架 | 同左 | **关键改造**：MIPS opcode→RV32I opcode/funct3/funct7 |
+| **alu** | ④ SEU minisys ALU六分类 | 同左，加流水线级 | RV32I 操作码映射到 6 类 ALU 操作 |
+| **control_unit** | ③ SEU minisys `id.v` 框架 | 同左 | **关键改造**：MIPS opcode→RV32I opcode/funct3/funct7 |
 | **imm_gen** | 本项目 | 同左 | RV32I I/S/B/U/J 五种立即数格式 |
 | **branch_unit** | 本项目 | ④ BTB.v 思路 | RV32I BEQ/BNE + 可选的 JALR |
 | **mac_unit** | 本项目（独创） | 流水线化版本 | `rd_new = rd_old + rs1*rs2` |
@@ -121,8 +121,8 @@ cpu_top (5级流水线)
 
 | 组件 | 来源 | 说明 |
 |---|---|---|
-| **mem_bus** | ★ ③ SEU-Class2 `arbitration.v` | 改造为 mem_bus，统一 data_mem 与 MMIO 访问 |
-| **mmio_decoder** | ③ SEU-Class2 地址译码 | `addr[31:10]==0xFFFFF` → IO，`addr[9:4]` → 设备选择 |
+| **mem_bus** | ★ ③ SEU minisys `arbitration.v` | 改造为 mem_bus，统一 data_mem 与 MMIO 访问 |
+| **mmio_decoder** | ③ SEU minisys 地址译码 | `addr[31:10]==0xFFFFF` → IO，`addr[9:4]` → 设备选择 |
 | **instr_mem** | ② SUSTech `inst_rom.v` | `$readmemh` 行为级初始化 |
 | **data_mem** | ② SUSTech `dm memory32.v` | 32-bit word LW/SW，行为级 BRAM |
 
@@ -130,23 +130,23 @@ cpu_top (5级流水线)
 
 | 组件 | P0 来源 | P1/P2 扩展 | 接口规范 |
 |---|---|---|---|
-| **gpio_led** | ③ SEU-Class2 `leds.v` | 同左 | 6端口统一接口 |
-| **gpio_switch** | ③ SEU-Class2 `switches.v` | 同左 | 6端口统一接口 |
-| **seg7_driver** | ④ SEU-Group16 `nixieTube.v` | 同左 | 低有效共阳极扫描 |
-| **timer** | — | ③ SEU-Class2 `timer.v` | P1 添加 |
+| **gpio_led** | ③ SEU minisys `leds.v` | 同左 | 6端口统一接口 |
+| **gpio_switch** | ③ SEU minisys `switches.v` | 同左 | 6端口统一接口 |
+| **seg7_driver** | ④ SEU minisys `nixieTube.v` | 同左 | 低有效共阳极扫描 |
+| **timer** | — | ③ SEU minisys `timer.v` | P1 添加 |
 | **pwm** | — | ③/④ `pwm.v` | P1 添加 |
 | **uart** | — | ② SUSTech `uart_bmpg_0` | P2 添加，用于程序在线加载 |
-| **buzzer** | — | ③ SEU-Class2 `beep.v` | P2 添加 |
+| **buzzer** | — | ③ SEU minisys `beep.v` | P2 添加 |
 
 ### 2.4 流水线基础设施（P1/P2）
 
 | 组件 | 来源 | 说明 |
 |---|---|---|
-| **流水线寄存器 (if_id/id_ex/ex_mem/mem_wb)** | ① NCUT / ③ SEU-Class2 | 统一信号命名风格 |
+| **流水线寄存器 (if_id/id_ex/ex_mem/mem_wb)** | ① NCUT / ③ SEU minisys | 统一信号命名风格 |
 | **数据前推 (forwarding)** | ① NCUT `id.v` 前推逻辑 | EX/MEM/WB → ID 三路径前推 |
-| **冒险检测 (hazard)** | ① NCUT + ③ SEU-Class2 `ppl_scheduler.v` | load-use stall, branch flush |
-| **BTB 分支预测** | ④ SEU-Group16 `BTB.v` | P2 冲刺，可显著提升 IPC |
-| **CP0/CSR 异常** | ④ SEU-Group16 `CP0.v` → RV32I CSR | P2 冲刺 |
+| **冒险检测 (hazard)** | ① NCUT + ③ SEU minisys `ppl_scheduler.v` | load-use stall, branch flush |
+| **BTB 分支预测** | ④ SEU minisys `BTB.v` | P2 冲刺，可显著提升 IPC |
+| **CP0/CSR 异常** | ④ SEU minisys `CP0.v` → RV32I CSR | P2 冲刺 |
 
 ---
 
@@ -154,7 +154,7 @@ cpu_top (5级流水线)
 
 ### 3.1 编码差异总览
 
-| 维度 | MIPS (四个仓库) | RV32I (本项目) |
+| 维度 | MIPS (五个仓库) | RV32I (本项目) |
 |---|---|---|
 | **opcode 位置** | `instr[31:26]` (6-bit) | `instr[6:0]` (7-bit) |
 | **源寄存器 rs1** | `instr[25:21]` | `instr[19:15]` |
@@ -196,7 +196,7 @@ cpu_top (5级流水线)
 
 ### 3.4 ALU 操作码映射
 
-| RV32I 运算 | ④ SEU-Group16 alutype | ④ SEU-Group16 aluop |
+| RV32I 运算 | ④ SEU minisys alutype | ④ SEU minisys aluop |
 |---|---|---|
 | ADD/SUB | `ARITH (3'b001)` | 映射到 ADD/SUB op |
 | AND/OR/XOR | `LOGIC (3'b010)` | 映射到 AND/OR/XOR op |
@@ -449,7 +449,7 @@ Project-based Curriculum Stage/
 
 ### 6.1 外设统一 6 端口接口
 
-> 借鉴 ③ SEU-Class2 的外设接口设计，所有 `src/io/` 下的外设模块必须遵循此规范。
+> 借鉴 ③ SEU minisys 的外设接口设计，所有 `src/io/` 下的外设模块必须遵循此规范。
 
 ```verilog
 // 外设统一接口模板
@@ -468,7 +468,7 @@ module peripheral_template (
 ### 6.2 MMIO 地址映射（RV32I 统一版）
 
 > 综合借鉴 ② SUSTech 的 `ALU_o[31:10]==22'h3FFFFF` 方案和
-> ③ SEU-Class2 的 `addr[31:10]=={20'hFFFFF, 2'b11}` + `addr[9:4]` 外设选择方案，
+> ③ SEU minisys 的 `addr[31:10]=={20'hFFFFF, 2'b11}` + `addr[9:4]` 外设选择方案，
 > 统一为本项目的 MMIO 地址映射。
 
 ```text
@@ -527,7 +527,7 @@ input  [31:0]  bus_read_data;   // 读数据（来自仲裁器）
 |---|---|---|---|---|
 | D-01 | RV32I 不变，不从 MIPS | 课程需求+MAC自定义ISA扩展 | A | 2026-07-06 |
 | D-02 | P0=多周期FSM, P1/P2=流水线 | 先保底后冲刺 | A | 2026-07-06 |
-| D-03 | 总线采用 ③ SEU-Class2 仲裁模式 | 最成熟的共享总线+外设统一接口 | 待确认 | 2026-07-07 |
+| D-03 | 总线采用 ③ SEU minisys 仲裁模式 | 最成熟的共享总线+外设统一接口 | 待确认 | 2026-07-07 |
 | D-04 | 外设统一 6 端口接口 | 标准化，易扩展 | 待确认 | 2026-07-07 |
 | D-05 | MMIO 地址 `addr[31:28]==4'h1` | 与现有 memory_map.md 一致 | 待确认 | 2026-07-07 |
 | D-06 | P0 全行为级 BRAM（不用 Vivado IP） | 便于 xsim 仿真和无 IP 依赖 | 待确认 | 2026-07-07 |
