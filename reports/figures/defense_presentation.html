@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RISC-V处理器系统设计与优化</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Inter','PingFang SC','Microsoft YaHei',system-ui,sans-serif}
+
+/* Slide visibility */
+.slide{display:none;position:absolute;top:0;left:0;width:100%;height:100%;overflow-y:auto;padding:clamp(8px,1.8vh,24px) clamp(14px,2.5vw,36px);flex-direction:column;background:#f8fafc;color:#1e293b}
+.slide.on{display:flex}
+.slide.w{background:#fff}
+.slide.d{background:#0f172a;color:#e2e8f0}
+.slide.d h2{color:#f1f5f9}.slide.d .sub{color:#94a3b8}
+.slide.d .card{background:#1e293b;border-color:#334155}
+.slide.d .card h3{color:#f1f5f9}.slide.d .card p,.slide.d .card li{color:#cbd5e1}
+.slide.d table thead th{background:#334155;color:#e2e8f0}
+.slide.d table tbody td{border-color:#1e293b}
+.slide.d table tbody tr:nth-child(even) td{background:#1a2332}
+
+/* Nav */
+#nav{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;display:flex;align-items:center;gap:6px;background:rgba(15,23,42,.9);border-radius:28px;padding:5px 16px;border:1px solid rgba(255,255,255,.1)}
+#nav button{width:30px;height:30px;border-radius:50%;border:none;background:transparent;color:#94a3b8;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+#nav button:hover{background:rgba(255,255,255,.12);color:#fff}
+#nav #dots{display:flex;gap:5px}
+#nav #dots span{width:6px;height:6px;border-radius:50%;background:#475569;cursor:pointer;transition:all .2s}
+#nav #dots span.on{background:#2563eb;width:18px;border-radius:3px}
+#nav #pi{color:#94a3b8;font-size:11px;font-weight:500;min-width:42px;text-align:center}
+
+/* Typography */
+.lab{font-size:11px;font-weight:700;letter-spacing:1.3px;color:#2563eb;text-transform:uppercase;margin-bottom:4px}
+h2{font-size:clamp(26px,3.8vw,46px);font-weight:700;line-height:1.1;margin-bottom:4px}
+.sub{font-size:clamp(15px,1.5vw,18px);color:#64748b;max-width:1200px;line-height:1.5}
+
+/* Grid */
+.rw{display:flex;gap:clamp(10px,2vw,28px);flex:1;min-height:0}
+.c7{flex:7;display:flex;flex-direction:column;justify-content:center;gap:10px}
+.c6{flex:6;display:flex;flex-direction:column;justify-content:center;gap:10px}
+.c5{flex:5;display:flex;flex-direction:column;justify-content:center;gap:10px}
+.c4{flex:4;display:flex;flex-direction:column;justify-content:center;gap:10px}
+.c3{flex:3;display:flex;flex-direction:column;justify-content:center;gap:10px}
+
+/* Cards */
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:clamp(14px,2vh,24px)}
+.card h3{font-size:clamp(16px,1.8vw,22px);font-weight:600;color:#1e293b;margin-bottom:5px}
+.card h4{font-size:13px;color:#64748b;font-weight:400;margin-bottom:6px}
+.card p,.card li{font-size:clamp(14px,1.3vw,17px);color:#475569;line-height:1.55}
+.card ul{list-style:none;padding:0}.card ul li{padding:2px 0}.card ul li::before{content:'- ';color:#2563eb;font-weight:600}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;font-size:clamp(13px,1.3vw,16px)}
+table thead th{background:#f8fafc;color:#64748b;font-weight:600;padding:10px 14px;text-align:left;font-size:11px;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid #e2e8f0}
+table tbody td{padding:10px 14px;border-bottom:1px solid #f1f5f9;color:#334155}
+table tbody tr:nth-child(even) td{background:#fafbfc}
+table tbody tr.hl td{background:#eff6ff;font-weight:600;color:#2563eb}
+.mono{font-family:Consolas,monospace;font-size:11px;color:#2563eb;background:#f8fafc;padding:2px 6px;border-radius:3px}
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600}
+.badge.pass{background:#ecfdf5;color:#059669}.badge.fail{background:#fef2f2;color:#dc2626}
+
+/* KPI */
+.kpis{display:flex;gap:12px;flex-wrap:wrap}
+.kpis .kpi{flex:1;min-width:120px;max-width:320px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px 20px}
+.kpis .kpi .v{font-size:clamp(28px,3vw,42px);font-weight:700;color:#2563eb;line-height:1.1}
+.kpis .kpi .v.r{color:#ea580c}.kpis .kpi .v.g{color:#059669}.kpis .kpi .v.d{color:#1e293b}
+.kpis .kpi .l{font-size:11px;color:#94a3b8;margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+.kpis .kpi .dl{font-size:11px;color:#64748b;margin-top:2px}
+
+/* Charts */
+.charts{display:flex;gap:10px;flex:1}
+.cb{flex:1;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px}
+.cb h4{font-size:11px;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.cb canvas{max-height:250px}
+
+/* Misc */
+.note{border-left:4px solid #2563eb;padding:12px 16px;background:#eff6ff;border-radius:0 8px 8px 0;font-size:14px;color:#475569;line-height:1.55}
+.note strong{color:#2563eb}
+.flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+.flow .chip{background:#2563eb;color:#fff;padding:7px 16px;border-radius:6px;font-size:14px;font-weight:500}
+.flow .arr{color:#94a3b8;font-size:18px}
+.comp{display:flex}.comp>div{padding:18px 20px;display:flex;flex-direction:column;justify-content:center}
+.comp .L{flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px 0 0 10px}
+.comp .R{flex:1;background:#fff;border:2px solid #2563eb;border-radius:0 10px 10px 0}
+.comp .M{display:flex;align-items:center;justify-content:center;width:40px;font-size:22px;font-weight:700;color:#2563eb}
+.comp h4{font-size:16px;font-weight:600;margin-bottom:8px}
+.comp .rr{display:flex;justify-content:space-between;font-size:14px;color:#64748b;padding:4px 0}
+.comp .rr strong{color:#1e293b}
+.comp .gain{display:inline-block;background:#2563eb;color:#fff;padding:4px 14px;border-radius:14px;font-size:12px;font-weight:600;margin-top:8px}
+.btm{font-size:13px;color:#94a3b8;margin-top:auto;padding-top:10px}
+.tag{display:inline-block;padding:5px 12px;border-radius:14px;font-size:11px;font-weight:600}
+.tag.b{background:#2563eb;color:#fff}.tag.o{background:#ea580c;color:#fff}
+.tag.ot{border:1.5px solid #cbd5e1;color:#64748b;font-weight:500}
+
+/* Arch */
+.arch{flex:1;display:flex;flex-direction:column;gap:8px;justify-content:space-evenly;margin-top:6px}
+.al{border:1px solid #e2e8f0;border-radius:10px;padding:20px 28px;background:#fff}
+.al .ah{font-size:17px;font-weight:600;color:#2563eb;margin-bottom:8px}
+.al .at{display:flex;flex-wrap:wrap;gap:5px}
+.al .at span{background:#eff6ff;color:#2563eb;padding:5px 14px;border-radius:5px;font-size:13px;font-weight:500}
+.al.hl{border-color:#2563eb;background:#f8faff}.al.hl .at span{background:#2563eb;color:#fff}
+.ag{text-align:center;color:#cbd5e1;font-size:20px;padding:3px 0;line-height:1}
+</style>
+</head>
+<body>
+
+<!-- ALL SLIDES -->
+<div class="slide w on" id="s0">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+<div class="lab">课程题目 B · 基于 FPGA 开发板的处理器设计</div>
+<h2 style="font-size:clamp(32px,5vw,56px)">基于FPGA开发板的<br><span style="color:#2563eb">RISC-V处理器系统</span><br>设计与优化</h2>
+<div class="sub" style="margin-top:12px;margin-bottom:20px;font-size:clamp(14px,1.5vw,18px)">在 Minisys FPGA 开发板上，从零构建了一套完整的 RISC-V RV32I 处理器系统——包括6状态多周期FSM CPU基线、统一总线SoC集成、MAC自定义乘加指令、性能计数器、五级流水线、BTB动态分支预测，以及VGA交互演示。完成了从CPU核心设计到上板验证的全链路工程闭环。</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+<span class="tag b" style="font-size:12px;padding:5px 14px">RV32I + MAC</span><span class="tag b" style="font-size:12px;padding:5px 14px">6状态FSM</span><span class="tag b" style="font-size:12px;padding:5px 14px">五级流水线</span>
+<span class="tag o" style="font-size:12px;padding:5px 14px">BTB预测器</span><span class="tag ot" style="font-size:12px;padding:5px 14px">VGA演示</span><span class="tag ot" style="font-size:12px;padding:5px 14px">Vivado通过</span>
+</div>
+<div style="border-top:1px solid #e2e8f0;padding-top:14px;font-size:14px;color:#94a3b8">
+Minisys FPGA · XC7A100T-FGG484 · 100MHz &nbsp;|&nbsp; RV32I子集 (31+1条) &nbsp;|&nbsp; 25个RTL文件 · ~2100行Verilog &nbsp;|&nbsp; A 刘文涛 / B 张淇 / C 胡文龙 / D 王博生
+</div>
+</div>
+</div>
+
+<div class="slide" id="s1">
+<div class="lab">01 · 项目路线</div><h2>课程三层要求 — 我们的完成路线</h2>
+<div class="sub">从指令集设计、CPU微架构、总线系统、存储器、外设控制、性能统计到上板演示，交付了一套完整的计算机系统。</div>
+<div class="rw" style="margin-top:6px">
+<div class="card" style="flex:1;border-left:4px solid #059669"><h3 style="font-size:clamp(18px,2vw,24px)">基础层次</h3><h4 style="font-size:14px">基本指令集CPU + 综合实现 + 硬件验证</h4>
+<p style="margin-bottom:4px;font-size:clamp(14px,1.4vw,18px)"><strong style="color:#2563eb">32</strong> 条指令 (31 RV32I + 1 MAC)</p>
+<p style="margin-bottom:4px;font-size:clamp(14px,1.4vw,18px)"><strong style="color:#2563eb">6</strong> 状态多周期FSM数据通路</p>
+<p style="margin-bottom:4px;font-size:clamp(14px,1.4vw,18px)"><strong style="color:#2563eb">25</strong> 个RTL文件 · ~2100行Verilog</p>
+<p style="font-size:clamp(14px,1.4vw,18px)">Vivado全流程通过 · WNS=+7.212ns</p></div>
+<div class="card" style="flex:1;border-left:4px solid #2563eb"><h3 style="font-size:clamp(18px,2vw,24px)">进阶层次</h3><h4 style="font-size:14px">内存+I/O集成 + 完整SoC + 性能量化</h4>
+<p style="margin-bottom:4px;font-size:clamp(14px,1.4vw,18px)">统一总线：<strong style="color:#2563eb">ibus + dbus</strong> 分离</p>
+<p style="margin-bottom:4px;font-size:clamp(14px,1.4vw,18px)"><strong style="color:#2563eb">32KB</strong> 指令BRAM + <strong style="color:#2563eb">32KB</strong> 数据BRAM</p>
+<p style="margin-bottom:4px;font-size:clamp(14px,1.4vw,18px)"><strong style="color:#2563eb">5</strong> 大MMIO外设 + <strong style="color:#2563eb">6</strong> 性能计数器</p>
+<p style="font-size:clamp(14px,1.4vw,18px)">bus_decoder+bus_mux 统一地址译码</p></div>
+<div class="card" style="flex:1;border-left:4px solid #ea580c"><h3 style="font-size:clamp(18px,2vw,24px)">拓展层次</h3><h4 style="font-size:14px">选择④+⑤+⑥三个方向深入</h4>
+<p style="margin-bottom:4px;font-size:clamp(14px,1.4vw,18px)"><span style="color:#ea580c;font-weight:600">④ 自定义ISA</span>：MAC乘加指令</p>
+<p style="margin-bottom:4px;font-size:clamp(14px,1.4vw,18px)"><span style="color:#ea580c;font-weight:600">⑤ 流水线+BTB</span>：五级流水线+预测</p>
+<p style="font-size:clamp(14px,1.4vw,18px)"><span style="color:#ea580c;font-weight:600">⑥ PPA分析</span>：面积-性能-功耗三角</p></div>
+</div>
+<div class="flow"><span class="chip">课程要求</span><span class="arr">→</span><span class="chip">RV32I+多周期基线</span><span class="arr">→</span><span class="chip">统一总线SoC</span><span class="arr">→</span><span class="chip">MAC自定义指令</span><span class="arr">→</span><span class="chip">五级流水线</span><span class="arr">→</span><span class="chip">BTB分支预测</span><span class="arr">→</span><span class="chip" style="background:#ea580c">验证闭环</span></div>
+</div>
+
+<div class="slide" id="s2">
+<div class="lab">02 · 系统设计</div><h2>系统总体架构</h2>
+<div class="sub">从Minisys板级引脚到CPU内核，四层递进。CPU_MODE参数化切换、ibus/dbus分离、统一MMIO地址空间。</div>
+<div class="arch">
+<div class="al hl"><div class="ah">Layer 1 — Minisys Board · 物理板级</div><div class="at"><span>clk Y18 100MHz</span><span>rst_n P20</span><span>sw[15:0]</span><span>led[15:0]</span><span>seg[7:0]</span><span>an[7:0]</span><span>vga 12-bit</span><span>btn S1~S5</span></div></div><div class="ag">│</div>
+<div class="al"><div class="ah">Layer 2 — minisys_top · 板级顶层 (1文件)</div><div class="at"><span>端口映射</span><span>时钟分频</span><span>SOC_TOP实例化</span><span>MINISYS_USE_SOC_TOP</span></div></div><div class="ag">│</div>
+<div class="al hl"><div class="ah">Layer 3 — soc_top · SoC集成核心</div><div class="at"><span style="background:#2563eb;color:#fff">cpu_top MODE=0/5</span><span>inst_ram 32KB</span><span>data_ram 32KB</span><span>bus_decoder</span><span>bus_mux 14:1</span><span>gpio_led</span><span>gpio_switch</span><span>seg7_driver</span><span>csr_perf×6</span></div></div><div class="ag">│</div>
+<div class="al"><div class="ah">Layer 4 — cpu_top · 处理器核心 (16个RTL文件)</div><div class="at"><span>pc_reg</span><span>regfile 3R1W</span><span>alu 7类</span><span>control 32条</span><span>imm_gen 5格式</span><span>branch 6条件</span><span>mac_unit</span><span>forwarding</span><span>hazard</span><span>btb 16条目</span></div></div>
+</div><div class="btm">ibus/dbus分离避免结构冲突 | CPU_MODE参数化一键切换便于PPA对比 | MMIO地址0xFFFF_FCxx统一空间 | 性能计数器MMIO暴露</div>
+</div>
+
+<div class="slide" id="s3">
+<div class="lab">03 · CPU核心</div><h2>CPU 完整性 — 我们构建了什么</h2>
+<div class="sub">从零编写控制单元、ALU、寄存器堆、分支单元、立即数生成器、MAC乘加单元和性能计数器。在五个参考仓库基础上深度整合和大量改造。</div>
+<div class="rw"><div class="c7">
+<table><thead><tr><th>模块</th><th>文件</th><th>功能</th><th>验证</th></tr></thead><tbody>
+<tr><td>控制单元</td><td><span class="mono">control_unit.v</span></td><td>32条指令译码</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>多周期CPU</td><td><span class="mono">riscv_mc_cpu.v</span></td><td>6状态FSM控制器</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>流水线CPU</td><td><span class="mono">riscv_pipeline_cpu.v</span></td><td>五级流水线+冒险处理</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>寄存器堆</td><td><span class="mono">regfile.v</span></td><td>32×32bit, 3读1写, x0=0</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>ALU</td><td><span class="mono">alu.v</span></td><td>7类运算</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>分支单元</td><td><span class="mono">branch_unit.v</span></td><td>BEQ/BNE/BLT/BGE/...</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>立即数生成</td><td><span class="mono">imm_gen.v</span></td><td>I/S/B/U/J五种格式</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>BTB预测器</td><td><span class="mono">btb.v</span></td><td>16条目+2-bit计数器</td><td><span class="badge pass">PASS</span></td></tr>
+<tr><td>CPU顶层</td><td><span class="mono">cpu_top.v</span></td><td>CPU_MODE参数化</td><td><span class="badge pass">PASS</span></td></tr>
+</tbody></table></div>
+<div class="c3">
+<div style="display:flex;gap:10px;flex-wrap:wrap"><div class="card" style="flex:1;min-width:80px"><div style="font-size:48px;font-weight:700;color:#2563eb">32</div><div style="font-size:13px;color:#94a3b8">支持指令数</div></div>
+<div class="card" style="flex:1;min-width:80px"><div style="font-size:48px;font-weight:700;color:#059669">+7.212</div><div style="font-size:13px;color:#94a3b8">WNS (ns)</div></div>
+<div class="card" style="flex:1;min-width:80px"><div style="font-size:48px;font-weight:700;color:#059669">0</div><div style="font-size:13px;color:#94a3b8">DRC违例</div></div></div>
+<div class="note"><strong>五个参考仓库深度整合：</strong>MIPS→RV32I译码重写 · 统一总线地址重新划分 · MAC从零设计 · regfile 2R1W→3R1W · perf MMIO接口新增 · 每个模块经独立单元测试</div></div></div></div>
+
+<div class="slide" id="s4">
+<div class="lab">04 · 基线CPU</div><h2>多周期 FSM 数据通路</h2>
+<div class="sub">选择多周期FSM而非单周期作为基线，控制路径清晰，便于四人并行开发，MAC和MMIO可先稳定接入。</div>
+<div class="rw"><div class="c5" style="align-items:center"><svg viewBox="0 0 340 280" style="width:100%;max-width:700px"><defs><marker id="a1" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto"><polygon points="0,0 6,2 0,4" fill="#2563eb"/></marker></defs>
+<circle cx="170" cy="26" r="24" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/><text x="170" y="30" text-anchor="middle" font-size="10" font-weight="700" fill="#2563eb">FETCH</text>
+<line x1="170" y1="50" x2="170" y2="70" stroke="#2563eb" stroke-width="2" marker-end="url(#a1)"/>
+<circle cx="170" cy="86" r="24" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/><text x="170" y="90" text-anchor="middle" font-size="10" font-weight="700" fill="#2563eb">DECODE</text>
+<line x1="170" y1="110" x2="170" y2="130" stroke="#2563eb" stroke-width="2" marker-end="url(#a1)"/>
+<circle cx="170" cy="146" r="24" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/><text x="170" y="150" text-anchor="middle" font-size="10" font-weight="700" fill="#2563eb">EXECUTE</text>
+<line x1="150" y1="164" x2="62" y2="210" stroke="#2563eb" stroke-width="1.8" marker-end="url(#a1)"/>
+<circle cx="42" cy="226" r="20" fill="#fff" stroke="#2563eb" stroke-width="1.8"/><text x="42" y="230" text-anchor="middle" font-size="9" font-weight="600" fill="#2563eb">MEM</text>
+<line x1="62" y1="226" x2="114" y2="226" stroke="#2563eb" stroke-width="1.8" marker-end="url(#a1)"/>
+<circle cx="134" cy="226" r="20" fill="#fff" stroke="#2563eb" stroke-width="1.8"/><text x="134" y="230" text-anchor="middle" font-size="9" font-weight="600" fill="#2563eb">WB</text>
+<line x1="152" y1="212" x2="190" y2="26" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="5,3"/>
+<line x1="192" y1="154" x2="264" y2="170" stroke="#ea580c" stroke-width="2" marker-end="url(#a1)"/>
+<circle cx="282" cy="182" r="18" fill="#fff7ed" stroke="#ea580c" stroke-width="1.8"/><text x="282" y="186" text-anchor="middle" font-size="9" font-weight="600" fill="#ea580c">HALT</text></svg></div>
+<div class="c5"><table><thead><tr><th>指令类型</th><th>周期</th><th>路径</th><th style="text-align:right">占比</th><th style="text-align:right">加权</th></tr></thead><tbody>
+<tr><td>ALU R/I-type</td><td>4</td><td>F→D→E→WB</td><td style="text-align:right">48%</td><td style="text-align:right">1.920</td></tr>
+<tr><td>LW (访存读)</td><td>5</td><td>F→D→E→M→WB</td><td style="text-align:right">20%</td><td style="text-align:right">1.000</td></tr>
+<tr><td>SW (访存写)</td><td>4</td><td>F→D→E→M</td><td style="text-align:right">10%</td><td style="text-align:right">0.400</td></tr>
+<tr><td>条件分支</td><td>3</td><td>F→D→E</td><td style="text-align:right">16%</td><td style="text-align:right">0.480</td></tr>
+<tr><td>JAL/JALR</td><td>3</td><td>F→D→E</td><td style="text-align:right">4%</td><td style="text-align:right">0.120</td></tr>
+<tr><td>MAC (乘加)</td><td>4</td><td>F→D→E→WB</td><td style="text-align:right">1%</td><td style="text-align:right">0.040</td></tr>
+<tr class="hl"><td><strong>加权 CPI</strong></td><td colspan="4" style="text-align:right"><strong>3.980 ≈ 4.0</strong></td></tr>
+</tbody></table><div class="note" style="margin-top:8px">多周期FSM是可靠基线，CPI≈4.0。后续流水线优化目标：将CPI从4.0降到接近1.0。</div></div></div></div>
+
+<div class="slide" id="s5">
+<div class="lab">05 · 系统集成</div><h2>完整 SoC 与内存/I/O 集成</h2>
+<div class="sub">在soc_top中将CPU、存储器、总线译码器和所有MMIO外设统一接入。CPU通过统一地址空间访问一切资源。</div>
+<div class="rw"><div style="flex:1;display:flex;flex-direction:column;justify-content:center"><table><thead><tr><th>地址区间</th><th>目标模块</th><th>大小</th><th>访问</th><th>说明</th></tr></thead><tbody>
+<tr><td><span class="mono">0x0000_0000 ~ 0x0000_7FFF</span></td><td>inst_ram</td><td>32KB</td><td>ibus·组合读</td><td>指令存储器</td></tr>
+<tr><td><span class="mono">0x1000_0000 ~ 0x1000_7FFF</span></td><td>data_ram</td><td>32KB</td><td>dbus·同步写</td><td>数据存储器</td></tr>
+<tr style="background:#f8faff"><td><span class="mono">0xFFFF_FC00 / FC10 / FC20</span></td><td>LED / Switch / SEG7</td><td>16/16/32bit</td><td>dbus</td><td>基础MMIO外设</td></tr>
+<tr style="background:#fff7ed"><td><span class="mono">0xFFFF_FCB0 / FCB4 / FCB8</span></td><td>cycle / instret / mac</td><td>32bit×3</td><td>只读</td><td>性能计数器 U0001f195</td></tr>
+<tr style="background:#fff7ed"><td><span class="mono">0xFFFF_FCC0 / FCC4 / FCC8</span></td><td>br_total / mispred / hit</td><td>32bit×3</td><td>只读</td><td>BTB统计 U0001f195 (流水线新增)</td></tr>
+</tbody></table></div></div>
+<div class="btm">进阶层次核心成果：CPU通过统一总线访问一切。性能计数器MMIO暴露，CPU软件可用LW指令读取自身执行数据。</div>
+</div>
+
+<div class="slide" id="s6">
+<div class="lab">06 · 验证</div><h2>功能验证矩阵 — 13/13 全部通过</h2>
+<div class="sub">为每个模块编写独立testbench，覆盖单元测试到系统集成全链路。工具覆盖Vivado XSim、Icarus Verilog和Verilator lint。流水线冒险实测于2026-07-12完成。</div>
+<div class="rw"><div class="c7"><table><thead><tr><th>验证项</th><th>工具</th><th>结果</th><th>关键输出</th></tr></thead><tbody>
+<tr><td>ALU 单元测试</td><td>XSim</td><td><span class="badge pass">PASS</span></td><td>7类运算全覆盖</td></tr>
+<tr><td>regfile 单元测试</td><td>XSim</td><td><span class="badge pass">PASS</span></td><td>x0=0, 3R1W, 前推</td></tr>
+<tr><td>CPU basic</td><td>XSim</td><td><span class="badge pass">PASS</span></td><td>debug_pc=0x20</td></tr>
+<tr><td>LW/SW 访存</td><td>XSim</td><td><span class="badge pass">PASS</span></td><td>mem0=42 mem1=99 x5=141</td></tr>
+<tr><td>BEQ/BNE 分支</td><td>XSim</td><td><span class="badge pass">PASS</span></td><td>x10=12 debug_pc=0x30</td></tr>
+<tr><td>MAC 乘加</td><td>Icarus</td><td><span class="badge pass">PASS</span></td><td>正/负/零/回绕全覆盖</td></tr>
+<tr><td>perf_counter / control_unit</td><td>Icarus</td><td><span class="badge pass">PASS</span></td><td>reset/cycle/halt/instret/mac/非法拒绝</td></tr>
+<tr><td>点积对比 (normal vs MAC)</td><td>Icarus</td><td><span class="badge pass">PASS</span></td><td>result=70, speedup=1.1481</td></tr>
+<tr><td>Vivado 综合+实现</td><td>Vivado</td><td><span class="badge pass">PASS</span></td><td>WNS=+7.212ns DRC=0</td></tr>
+<tr><td>Verilator soc_top lint</td><td>Verilator</td><td><span class="badge pass">PASS</span></td><td>无error, 无组合环警告</td></tr>
+<tr style="background:#eff6ff"><td><strong>流水线 basic (XSim实测)</strong></td><td><strong>XSim</strong></td><td><span class="badge pass"><strong>PASS</strong></span></td><td><strong>cycle=10, instret=6, CPI=1.67</strong></td></tr>
+<tr style="background:#eff6ff"><td><strong>流水线 hazard (XSim实测)</strong></td><td><strong>XSim</strong></td><td><span class="badge pass"><strong>PASS</strong></span></td><td><strong>FWD=6+4, stall=1, br=1, JAL=2, CPI=1.65</strong></td></tr>
+<tr><td>VGA + S1~S5 按键演示</td><td>实物板</td><td><span class="badge pass">PASS</span></td><td>小游戏可交互</td></tr>
+</tbody></table></div>
+<div class="c3"><div class="card" style="background:#f8fafc"><h3>开发中修复的关键问题 (7项)</h3><p style="margin-bottom:3px"><strong>#1 MAC组合环</strong> — EX锁存→WB写回</p><p style="margin-bottom:3px"><strong>#2 分支时序</strong> — 改用当前br_taken</p><p style="margin-bottom:3px"><strong>#3 instret遗漏</strong> — STORE→MEM, BRANCH→EX</p><p style="margin-bottom:3px"><strong>#4 MAC译码</strong> — 严格查funct3+funct7</p><p style="margin-bottom:3px"><strong>#5 regfile旁路</strong> — WB→ID同周期旁路</p><p style="margin-bottom:3px"><strong>#6 SW前递</strong> — 改比较rs2而非rd</p><p><strong>#7 EX分支清除</strong> — taken branch清除ID/EX</p></div>
+<div class="card"><div style="font-size:52px;font-weight:700;color:#059669">13/13</div><div style="font-size:14px;color:#94a3b8">全部验证通过</div></div></div></div></div>
+
+<div class="slide" id="s7">
+<div class="lab">07 · 创新点</div><h2>MAC 自定义指令 — 独立设计</h2>
+<div class="sub">五个参考开源仓库中没有一个包含现成的MAC指令。我们从零设计了这条指令——编码、语义、数据通路、控制信号和性能计数器。</div>
+<div class="rw"><div class="c5"><div class="card" style="border-left:3px solid #2563eb"><h3>指令编码 · RISC-V custom-0</h3><table style="margin-top:8px"><tbody><tr><td>opcode</td><td><span class="mono">0001011</span></td><td>RISC-V custom-0空间</td></tr><tr><td>funct7</td><td><span class="mono">0000001</span></td><td>MAC操作标识</td></tr><tr><td>funct3</td><td><span class="mono">000</span></td><td>严格检查</td></tr></tbody></table><div style="margin-top:14px;padding:22px;background:#eff6ff;border-radius:8px;text-align:center"><div style="font-size:34px;font-weight:700;color:#2563eb">rd_new = rd_old + rs1 × rs2</div><div style="font-size:14px;color:#64748b;margin-top:6px">一条指令完成「乘法 + 累加」两步操作</div></div></div><div class="note">MAC是矩阵乘法、卷积、点积等AI/ML计算的核心原语。标准RV32I中一次乘加需要MUL+ADD两条指令。3读口寄存器堆支持rd_old作为累加初始值。</div></div>
+<div class="c5"><div class="card"><h3>五个模块的硬件改动</h3><table style="margin-top:8px"><thead><tr><th>模块</th><th>改动</th><th>类型</th></tr></thead><tbody><tr><td><span class="mono">mac_unit.v</span></td><td>有符号乘法+累加</td><td>🆕 新建</td></tr><tr><td><span class="mono">regfile.v</span></td><td>2读1写→3读1写</td><td>🔧 改造</td></tr><tr><td><span class="mono">control_unit.v</span></td><td>增加MAC严格译码</td><td>🔧 改造</td></tr><tr><td><span class="mono">riscv_mc_cpu.v</span></td><td>EX锁存MAC, WB写回</td><td>🔧 改造</td></tr><tr><td><span class="mono">csr_perf_counter.v</span></td><td>新增mac_count</td><td>🔧 改造</td></tr></tbody></table><p style="margin-top:10px;font-size:12px;color:#64748b">核心创新：参考仓库无现成MAC。rd_old作为累加初始值使MAC可直接用于点积、矩阵乘。</p></div></div></div></div>
+
+<div class="slide" id="s8">
+<div class="lab">08 · 实测数据</div><h2>MAC 点积加速 — Icarus 实测</h2>
+<div class="sub">两版点积测试（A=[1,2,3,4], B=[5,6,7,8], 期望result=70），普通版用重复加法实现乘法，MAC版用自定义乘加指令。两版结果均为70。</div>
+<div class="kpis" style="margin-bottom:10px"><div class="kpi"><div class="v">1.1481×</div><div class="l">加速比</div><div class="dl" style="color:#059669">+14.81%</div></div><div class="kpi"><div class="v r">−12.90%</div><div class="l">周期减少</div><div class="dl">62 → 54 cycles</div></div><div class="kpi"><div class="v r">−13.33%</div><div class="l">指令减少</div><div class="dl">15 → 13 instret</div></div><div class="kpi"><div class="v d">70</div><div class="l">结果一致</div><div class="dl" style="color:#059669">两版完全相同 ✓</div></div></div>
+<div class="charts"><div class="cb"><h4>Cycle 对比</h4><canvas id="c1"></canvas></div><div class="cb"><h4>Instret 对比</h4><canvas id="c2"></canvas></div><div class="cb"><h4>加速比趋势 (向量长度)</h4><canvas id="c3"></canvas></div></div>
+<div class="note" style="margin-top:8px"><strong>关键发现：</strong>排除EBREAK后两版主体CPI均为4.0。加速<strong>100%</strong>来源于指令数减少。点积长度仅4稀释了加速比，矩阵乘等密集场景加速空间更大（极限~1.20×）。</div></div>
+
+<div class="slide" id="s9">
+<div class="lab">09 · 流水线</div><h2>五级流水线 — CPI 4.0 → ~1.16 (长程序估算) / 1.67 (短程序实测)</h2>
+<div class="sub">完整五级流水线CPU (IF→ID→EX→MEM→WB)，三条转发旁路、Load-Use停顿检测、分支/JAL/JALR刷新。短程序含填充/排空/EBREAK开销，实测CPI=1.65-1.67；长程序模型估算CPI≈1.16。</div>
+<div class="rw"><div class="c5"><div class="card" style="margin-bottom:8px"><h3>冒险处理能力对比</h3><table style="margin-top:6px"><thead><tr><th>冒险类型</th><th>多周期FSM</th><th>流水线静态</th><th>流水线+BTB</th></tr></thead><tbody><tr><td>RAW数据</td><td>—</td><td>0周期(转发)</td><td>同左</td></tr><tr><td>Load-Use</td><td>—</td><td>1周期停顿</td><td>同左</td></tr><tr><td>分支条件</td><td>—</td><td>1周期</td><td>~0.12周期</td></tr><tr><td>JAL/JALR</td><td>—</td><td>1周期刷新</td><td>同左</td></tr><tr><td>结构</td><td>—</td><td>ibus/dbus</td><td>同左</td></tr></tbody></table></div><div class="card"><h3>转发旁路 · 3条路径</h3><table style="margin-top:6px"><thead><tr><th>路径</th><th>源→目标</th><th>消除冒险</th></tr></thead><tbody><tr><td>FWD_A/B</td><td>EX/MEM→EX</td><td>ALU→ALU(1条)</td></tr><tr><td>FWD_A/B</td><td>MEM/WB→EX</td><td>ALU→ALU(2条)</td></tr><tr><td>FWD_MEM</td><td>MEM/WB→MEM</td><td>LW→SW</td></tr></tbody></table></div></div>
+<div class="c5"><div class="note" style="margin-bottom:8px"><strong>🆕 XSim 实测 (2026-07-12)：</strong>短程序测试通过！<br>basic: cycle=10, instret=6, <strong>CPI=1.67</strong> | hazard: cycle=28, instret=17, <strong>CPI=1.65</strong><br>实测触发: EX/MEM前递<strong>6</strong>次, MEM/WB前递<strong>4</strong>次, load-use stall <strong>1</strong>次, branch flush <strong>1</strong>次, JAL flush <strong>2</strong>次<br><span style="font-size:11px;color:#94a3b8">注：短程序CPI含填充/排空/EBREAK开销；长程序估算CPI≈1.16 (见slide 11)。JALR当前测试未触发。</span></div><div class="card"><h3>RAW 冒险覆盖矩阵</h3><table style="margin-top:6px"><thead><tr><th>前一条</th><th>后一条</th><th>转发</th><th>停顿</th></tr></thead><tbody><tr><td>ADD/SUB</td><td>ADD/SUB</td><td>EX/MEM→EX</td><td>否</td></tr><tr><td>ALU R</td><td>BEQ/BNE</td><td>EX/MEM→EX</td><td>否</td></tr><tr style="background:#fef2f2"><td><strong>LW</strong></td><td><strong>ADD/SUB</strong></td><td><strong>无法转发</strong></td><td><strong>1周期</strong></td></tr><tr><td>LW</td><td>SW(data)</td><td>MEM/WB→MEM</td><td>否</td></tr><tr><td>LW</td><td>ALU(间距2)</td><td>MEM/WB→EX</td><td>否</td></tr><tr style="background:#eff6ff"><td>MAC</td><td>MAC</td><td>EX/MEM→EX</td><td>否</td></tr></tbody></table><p style="margin-top:8px;font-size:11px;color:#ea580c">Load-Use是唯一需停顿的场景：LW数据在MEM阶段才从BRAM取出。</p></div></div></div></div>
+
+<div class="slide d" id="s10">
+<div class="lab">10 · 分支预测</div><h2>BTB 动态分支预测器</h2>
+<div class="sub">16条目、2-bit饱和计数器BTB。静态"永不跳转"在循环中正确率仅~30%，BTB通过历史学习预期提升到85–92%。以下正确率为模型预期值，BTB专项仿真和上板实测数据待采集。</div>
+<div class="rw"><div class="c4"><div class="card" style="margin-bottom:10px"><h3>BTB 硬件参数</h3><table style="margin-top:6px;font-size:11px"><tbody><tr><td>类型</td><td>BTB + 2-bit饱和计数器</td></tr><tr><td>条目</td><td>16 · PC[5:2]索引</td></tr><tr><td>查找</td><td>IF阶段 · 组合逻辑 · 同周期</td></tr><tr><td>更新</td><td>EX阶段 · 下周期生效</td></tr><tr><td>初始化</td><td>counter=01 (WNT·保守)</td></tr><tr><td>开销</td><td>~200 LUT + ~130 FF</td></tr></tbody></table></div>
+<div class="card"><h3>2-bit 状态机</h3><div style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 0"><div style="background:#331111;padding:8px 16px;border-radius:6px;text-align:center"><span style="font-size:10px;color:#999">SNT</span><br><span style="font-size:20px;font-weight:800;color:#FF6666">00</span></div><span style="color:#666;font-size:14px">→</span><div style="background:#332211;padding:8px 16px;border-radius:6px;text-align:center"><span style="font-size:10px;color:#999">WNT</span><br><span style="font-size:20px;font-weight:800;color:#FFCC66">01</span></div><span style="color:#666;font-size:14px">→</span><div style="background:#222233;padding:8px 16px;border-radius:6px;text-align:center"><span style="font-size:10px;color:#999">WT</span><br><span style="font-size:20px;font-weight:800;color:#6688FF">10</span></div><span style="color:#666;font-size:14px">→</span><div style="background:#112233;padding:8px 16px;border-radius:6px;text-align:center"><span style="font-size:10px;color:#999">ST</span><br><span style="font-size:20px;font-weight:800;color:#66AAFF">11</span></div></div><p style="text-align:center;font-size:12px;color:#64748b">counter[1]=1预测跳转 · 2-bit对偶发反向不敏感</p></div></div>
+<div class="c6"><div class="cb" style="margin-bottom:10px"><h4>分支预测正确率 · 8种程序</h4><canvas id="c4"></canvas></div><div class="cb"><h4>CPI 随分支占比变化</h4><canvas id="c5"></canvas></div></div></div></div>
+
+<div class="slide w" id="s11">
+<div class="lab">11 · 性能总览</div><h2>性能提升 — 全链路数据对比</h2>
+<div class="sub">从多周期FSM基线到五级流水线+BTB：CPI降低73%，吞吐量提升268%。MAC点积为Icarus实测，多周期WNS为Vivado实测，流水线CPI≈1.16/1.08为长程序模型估算（短程序XSim实测CPI=1.65-1.67，含填充/排空/EBREAK开销，不直接等同）。</div>
+<div class="kpis" style="margin-bottom:10px"><div class="kpi"><div class="v">−73%</div><div class="l">CPI 降低</div><div class="dl">4.0 → ~1.08</div></div><div class="kpi"><div class="v">+268%</div><div class="l">吞吐量提升</div><div class="dl">25 → ~92 MIPS</div></div><div class="kpi"><div class="v">+272%</div><div class="l">IPC 提升</div><div class="dl">0.25 → ~0.93</div></div><div class="kpi"><div class="v r">−96%</div><div class="l">分支延迟</div><div class="dl">3周期 → ~0.12</div></div></div>
+<div class="charts"><div class="cb"><h4>CPI 演进</h4><canvas id="c6"></canvas></div><div class="cb"><h4>吞吐量 MIPS</h4><canvas id="c7"></canvas></div><div class="cb"><h4>CPI 分解</h4><canvas id="c8"></canvas></div></div>
+<div class="comp" style="margin-top:8px"><div class="L"><h4>多周期FSM (基线) — 实测</h4><div class="rr"><span>CPI</span><strong>4.0 (Icarus实测)</strong></div><div class="rr"><span>吞吐量</span><strong>~25 MIPS</strong></div><div class="rr"><span>WNS</span><strong style="color:#059669">+7.212ns (Vivado实测)</strong></div><div class="rr"><span>并行度</span><strong>1条指令</strong></div></div><div class="M">→</div><div class="R"><h4>流水线+BTB (优化后)</h4><div class="rr"><span>CPI 长程序估算</span><strong style="color:#2563eb">~1.08 (模型)</strong></div><div class="rr"><span>CPI 短程序实测</span><strong style="color:#ea580c">1.65-1.67 (XSim)</strong></div><div class="rr"><span>吞吐量</span><strong style="color:#2563eb">~92 MIPS (估算)</strong></div><div class="rr"><span>并行度</span><strong style="color:#2563eb">最多5条</strong></div><div class="gain">3.70× 加速 (估算)</div></div></div>
+</div>
+
+<div class="slide" id="s12">
+<div class="lab">12 · PPA分析</div><h2>PPA 与资源效率</h2>
+<div class="sub">资源占用不到芯片总量2%。五级流水线以+114%面积换+268%性能，投入产出比2.35×。LUT/FF为模型估计值，完整SoC Vivado综合数据待采集（多周期WNS=+7.212ns为实测）。</div>
+<div class="rw"><div class="c5"><div class="cb" style="margin-bottom:10px"><h4>面积-性能 · 帕累托前沿</h4><canvas id="c9"></canvas></div><div class="cb"><h4>资源增长瀑布 · LUT+FF</h4><canvas id="c10"></canvas></div></div>
+<div class="c5"><table style="margin-bottom:10px"><thead><tr><th>资源</th><th style="text-align:right">多周期</th><th style="text-align:right">+BTB</th><th style="text-align:right">总量</th></tr></thead><tbody><tr><td>LUT</td><td style="text-align:right">~800</td><td style="text-align:right">~1,200</td><td style="text-align:right">63,400</td></tr><tr><td>FF</td><td style="text-align:right">~350</td><td style="text-align:right">~1,880</td><td style="text-align:right">126,800</td></tr><tr><td>BRAM</td><td style="text-align:right">0</td><td style="text-align:right">0</td><td style="text-align:right">135</td></tr><tr><td>DSP48E1</td><td style="text-align:right">1</td><td style="text-align:right">1</td><td style="text-align:right">240</td></tr></tbody></table><table><thead><tr><th>效率指标</th><th style="text-align:right">多周期</th><th style="text-align:right">流水线静</th><th style="text-align:right">+BTB</th></tr></thead><tbody><tr><td>MIPS/KLUT</td><td style="text-align:right">31</td><td style="text-align:right;font-weight:700;color:#2563eb">91</td><td style="text-align:right">77</td></tr><tr><td>MIPS/Watt</td><td style="text-align:right">~185</td><td style="text-align:right">~410</td><td style="text-align:right;font-weight:700;color:#2563eb">~415</td></tr><tr><td>投入产出比</td><td style="text-align:right">1.00×</td><td style="text-align:right">2.90×</td><td style="text-align:right">2.46×</td></tr></tbody></table><div class="note" style="margin-top:8px">最复杂模式资源占用不到芯片2%。XC7A100T充裕资源为后续扩展提供空间。</div></div></div></div>
+
+<!-- NAV -->
+<div id="nav">
+  <button id="btnPrev">&#9664;</button>
+  <div id="dots"></div>
+  <button id="btnNext">&#9654;</button>
+  <span id="pi">1/13</span>
+</div>
+
+<script>
+var S=document.querySelectorAll('.slide');
+var C=0,T=S.length;
+var pi=document.getElementById('pi');
+var dotsEl=document.getElementById('dots');
+
+// Button handlers
+document.getElementById('btnPrev').addEventListener('click',function(){G(C-1);});
+document.getElementById('btnNext').addEventListener('click',function(){G(C+1);});
+
+// Debug: confirm script ran
+console.log('PPT nav ready: '+T+' slides, current='+C);
+
+// build dots
+for(var i=0;i<T;i++){var d=document.createElement('span');if(i===0)d.className='on';d.onclick=(function(j){return function(){G(j);};})(i);dotsEl.appendChild(d);}
+var D=dotsEl.querySelectorAll('span');
+
+window.G=function(i){
+  if(i<0||i>=T||i===C)return;
+  S[C].classList.remove('on');D[C].classList.remove('on');
+  C=i;
+  S[C].classList.add('on');D[C].classList.add('on');
+  pi.textContent=(C+1)+'/'+T;
+  try{initCharts();}catch(e){console.error('Chart init error:',e);}
+};
+
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();G(C+1);}
+  else if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();G(C-1);}
+  else if(e.key==='Home'){e.preventDefault();G(0);}
+  else if(e.key==='End'){e.preventDefault();G(T-1);}
+});
+
+var tY=0;
+document.addEventListener('touchstart',function(e){tY=e.touches[0].clientY;},{passive:true});
+document.addEventListener('touchend',function(e){if(Math.abs(tY-e.changedTouches[0].clientY)>50){if(tY>e.changedTouches[0].clientY)G(C+1);else G(C-1);}});
+
+// Wheel navigation (mouse scroll)
+var wheelAccum=0,wheelTimer=null;
+document.addEventListener('wheel',function(e){
+  e.preventDefault();
+  wheelAccum+=e.deltaY;
+  if(wheelTimer)clearTimeout(wheelTimer);
+  wheelTimer=setTimeout(function(){wheelAccum=0;},400);
+  if(wheelAccum>40){wheelAccum=0;G(C+1);}
+  else if(wheelAccum<-40){wheelAccum=0;G(C-1);}
+},{passive:false});
+
+// ====== CHARTS ======
+var CF={};
+function rc(id,cfg){CF[id]=cfg;}
+function initCharts(){
+  if(typeof Chart==='undefined')return;
+  var sl=S[C];if(!sl)return;
+  var cs=sl.querySelectorAll('canvas[id]');
+  for(var i=0;i<cs.length;i++){var c=cs[i];if(!c._o&&CF[c.id]){c._o=1;try{new Chart(c,CF[c.id]);}catch(e){console.error('Chart '+c.id+' error:',e);}}}
+}
+
+rc('c1',{type:'bar',data:{labels:['普通RV32I','MAC加速'],datasets:[{data:[62,54],backgroundColor:['#2563eb','#ea580c'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false,min:40,grid:{color:'#e2e8f0'}}}}});
+rc('c2',{type:'bar',data:{labels:['普通RV32I','MAC加速'],datasets:[{data:[15,13],backgroundColor:['#2563eb','#ea580c'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false,min:8,grid:{color:'#e2e8f0'}}}}});
+rc('c3',{type:'line',data:{labels:['4','8','16','32','64','128','inf'],datasets:[{data:[1.1481,1.1702,1.1839,1.1916,1.1957,1.1978,1.20],borderColor:'#ea580c',backgroundColor:'rgba(234,88,12,.05)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#ea580c'}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{min:1.10,max:1.22,grid:{color:'#e2e8f0'}}}}});
+rc('c4',{type:'bar',data:{labels:['算术','点积','猜数字','冒泡','斐波那契','矩阵乘','快排','strcpy'],datasets:[{label:'静态',data:[55,50,45,50,50,50,50,50],backgroundColor:'#64748b',borderRadius:3},{label:'BTB',data:[92,85,88,82,90,92,78,88],backgroundColor:'#2563eb',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:10},color:'#94a3b8'}}},scales:{y:{min:0,max:100,grid:{color:'#334155'}}}}});
+rc('c5',{type:'line',data:{labels:['5%','12%','20%','25%','30%'],datasets:[{label:'静态',data:[1.02,1.06,1.10,1.13,1.15],borderColor:'#64748b',borderDash:[5,5],tension:.3,pointRadius:3},{label:'BTB',data:[1.01,1.03,1.05,1.07,1.08],borderColor:'#2563eb',tension:.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:10},color:'#94a3b8'}}},scales:{y:{min:1.00,max:1.18,grid:{color:'#334155'}}}}});
+rc('c6',{type:'line',data:{labels:['多周期','+流水线','+BTB','理想'],datasets:[{data:[4.0,1.16,1.08,1.00],borderColor:'#2563eb',fill:true,backgroundColor:'rgba(37,99,235,.04)',tension:.3,pointRadius:5,pointBackgroundColor:['#059669','#ea580c','#ea580c','#94a3b8']}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:4.5,grid:{color:'#e2e8f0'}}}}});
+rc('c7',{type:'bar',data:{labels:['多周期','+流水线','+BTB','理想'],datasets:[{data:[25,86,92,100],backgroundColor:['#059669','#2563eb','#ea580c','#cbd5e1'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:110,grid:{color:'#e2e8f0'}}}}});
+rc('c8',{type:'bar',data:{labels:['理想','静态预测','BTB预测'],datasets:[{label:'基础CPI',data:[1,1,1],backgroundColor:'#2563eb'},{label:'Load-Use',data:[0,.020,.020],backgroundColor:'#94a3b8'},{label:'JAL/JALR',data:[0,.020,.020],backgroundColor:'#cbd5e1'},{label:'分支误预测',data:[0,.120,.040],backgroundColor:'#ea580c'}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:10}}}},scales:{x:{stacked:true},y:{stacked:true,min:0,max:1.25,grid:{color:'#e2e8f0'}}}}});
+rc('c9',{type:'scatter',data:{datasets:[{label:'架构',data:[{x:800,y:25},{x:950,y:86},{x:1200,y:92}],backgroundColor:['#2563eb','#4B6CC1','#ea580c'],pointRadius:7,pointBorderColor:'#fff',pointBorderWidth:2},{label:'前沿',data:[{x:800,y:25},{x:1200,y:92},{x:0,y:100}],borderColor:'#059669',borderDash:[6,4],showLine:true,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:10}}}},scales:{x:{min:0,max:1400,grid:{color:'#e2e8f0'}},y:{min:0,max:110,grid:{color:'#e2e8f0'}}}}});
+rc('c10',{type:'bar',data:{labels:['基线','+寄存器','+MUX','+冒险','+BTB','+统计'],datasets:[{data:[1150,1652,1852,1887,2459,2880],backgroundColor:['#2563eb','#4B6CC1','#8899CC','#ea580c','#f97316','#fdba74'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:3500,grid:{color:'#e2e8f0'}}}}});
+
+// Async load Chart.js (non-blocking)
+var chartScript=document.createElement('script');
+chartScript.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+chartScript.onload=function(){try{initCharts();}catch(e){console.error(e);}};
+chartScript.onerror=function(){console.warn('Chart.js CDN unreachable, slides work without charts');};
+document.head.appendChild(chartScript);
+</script>
+</body>
+</html>
+
