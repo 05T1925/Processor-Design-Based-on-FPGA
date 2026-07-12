@@ -7,8 +7,8 @@
 - 课程题目：题目 B，基于 FPGA 开发板的处理器设计
 - 硬件平台：Minisys FPGA 实验板 + EES-329B-V1.1 子板，Xilinx Artix-7 XC7A100T
 - 开发环境：Vivado 2018.3，组内主仿真工具为 Vivado xsim
-- **当前阶段**：✅ 五仓库深度合并已完成 | RTL 基础设施 + RV32I 多周期 FSM CPU + 五级流水线 CPU + 统一总线 SoC 已就位
-- 项目状态：多周期+流水线双模式可切换，待 Vivado 综合流水线模式获取 PPA 数据
+- **当前阶段**：✅ 五仓库深度合并已完成 | RV32I 多周期 FSM CPU + 五级流水线 CPU + 统一总线 SoC + VGA/按键演示链路已就位
+- 项目状态：多周期+流水线双模式可切换；B 已补齐 LW/SW、BEQ/BNE 扩展仿真，并完成 VGA + S1~S5 按键小游戏骨架上板验证；待 Vivado 综合流水线模式获取 PPA 数据
 
 ## 当前主线（统一架构版）
 
@@ -49,7 +49,7 @@ src/
 │   └── pipeline/  BTB 分支预测器 🆕 (btb.v + br_predictor.v)
 ├── bus/           统一总线系统 (bus_decoder/bus_mux)
 ├── memory/        存储器 (inst_ram/data_ram)
-├── io/            外设控制器 (gpio_led/gpio_switch/seg7_driver)
+├── io/            外设控制器 (gpio_led/gpio_switch/seg7_driver/vga_button_demo/vga_test_pattern/kbd4x4_scanner)
 ├── common/        通用模块 (sync/debounce/edge_det)
 ├── soc/           SoC集成顶层 (soc_top)
 └── board/         板级顶层 (minisys_top)
@@ -121,7 +121,8 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 - 约束审计见 `docs/design/board_constraints_audit.md` 和 `docs/hardware/minisys_pinout.md`。
 - ✅ **Vivado 2018.3 综合/实现/bitstream 全部通过**（2026-07-09，B 执行）：WNS=+7.212ns, TNS=0, WHS=+0.241ns, THS=0, DRC=0。
 - ✅ 配置电压约束已补充：`CFGBVS VCCO` + `CONFIG_VOLTAGE 3.3`。
-- 🔄 待上板实测：P20 复位按钮极性。
+- ✅ VGA 显示链路和普通按键 `S1~S5` 已完成上板连通性验证（2026-07-11，B 执行）：VGA 黑底白边界面、方向按键、功能键切色和猜数字游戏骨架可演示。
+- 🔄 待上板实测：P20 复位按钮极性；4x4 矩阵键盘本轮多次尝试未稳定响应，当前演示路线改用 `S1~S5` 普通按键。
 
 ## 当前项目状态
 
@@ -137,7 +138,9 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 - ✅ **五级流水线 RTL 已完成**（2026-07-09，A）：CPU_MODE=5，forwarding + load-use stall + branch flush + JAL/JALR 冲刷，含冒险测试程序和仿真testbench。
 - ✅ **BTB 动态分支预测已完成**（2026-07-09，A+AI）：16条目直接映射 2-bit 饱和计数器，IF阶段查找+EX阶段更新，流水线CPU集成，分支预测正确率可统计（MMIO 0xFCC0-C8），含测试平台和性能分析文档。
 - ✅ **12 文档答辩数据体系已完成**（2026-07-09，A+AI）：`reports/tables/` 下 12 个性能分析文档（性能总览/CPI分解/资源利用/加速比/前后对比/性能图表/冒险分析/分支预测/PPA估计等），含 ASCII 图表集和答辩 PPT 建议清单。
-- 🔄 待完成：上板 LED/数码管演示（C）、流水线 Vivado 综合 PPA 导出（B/C）、LW/SW/Branch 扩展仿真（B）。
+- ✅ **LW/SW 与 BEQ/BNE 扩展仿真已完成**（2026-07-10，B）：新增 `tb_load_store.v`、`tb_branch.v`、`lw_sw_test.*`、`beq_bne_test.*`，xsim 控制台 PASS。
+- ✅ **VGA + 普通按键小游戏骨架已完成**（2026-07-11，B）：新增 `vga_button_demo.v`、`vga_test_pattern.v`、`kbd4x4_scanner.v`，接入 VGA、4x4 键盘和 `S1~S5` 按键约束；最终演示路线采用 `S1~S5 + VGA`。
+- 🔄 待完成：流水线 Vivado 综合 PPA 导出（B/C）、上板演示证据照片/视频整理、VGA 猜数字骨架的字符显示/伪随机数增强。
 
 ## B/C/D 队友快速开始（四仓库深度合并后更新 ⭐）
 
@@ -162,8 +165,9 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 3. ~~**tb_control_unit.v**~~ ✅ 已完成（32条指令译码全部通过）
 4. ~~**tb_cpu_basic.v**~~ ✅ 已完成（CPU HALTED, debug_pc=0x20, 结果正确）
 5. ~~Vivado synthesis/implementation/bitstream~~ ✅ 已完成（WNS=7.212ns, TNS=0, DRC=0）
-6. **当前任务**：扩展 `tests/load_store/` 和 `tests/branch/` 的 LW/SW/BEQ/BNE 测试
+6. ~~扩展 `tests/load_store/` 和 `tests/branch/` 的 LW/SW/BEQ/BNE 测试~~ ✅ 已完成（xsim PASS）
 7. **当前任务**：导出 Vivado utilization/timing 截图到 `reports/vivado/`
+8. **当前任务**：整理 VGA + `S1~S5` 上板演示证据，补充到报告/答辩材料
 
 **禁止**：不要改 memory map、不要改 MAC 语义、不要改 C/D 的模块。
 
@@ -184,7 +188,7 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 2. ~~验证 `soc_top` 全系统集成仿真~~ ✅ xsim 通过（B+C 均确认）
 3. ~~Synthesis → Implementation → Bitstream~~ ✅ B 已完成（WNS=7.212ns, DRC=0）
 4. **当前任务 🔴**：实测 P20 复位按钮极性
-5. **当前任务 🔴**：上板：LED 状态显示 + 数码管 result/cycle_count 显示
+5. **当前任务 🔴**：整理上板演示证据；LED/数码管链路已有最小验证基础，VGA + 普通按键小游戏骨架已由 B 打通
 6. Vivado 2017.4 用户注意：batch 模式综合在 Win11 上有 IPC 兼容性 bug（`TclStackFree` 崩溃），建议使用 **GUI 模式**或对 `vivado.exe` 设置 **Windows 7 兼容模式**
 
 **禁止**：不要改 CPU 译码、不要改 MAC 接口、不要改 regfile 第三读口。
@@ -228,10 +232,10 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 6. ~~**D** 对比普通点积和MAC点积的性能数据。~~ ✅ 已完成
 7. ~~**A** 实现五级流水线 RTL（CPU_MODE=5）~~ 🆕 ✅ 已完成：forwarding + load-use stall + branch/JAL/JALR flush + hazard_test.hex
 8. ~~**A** 实现 BTB 动态分支预测 + 12 文档答辩数据体系~~ 🆕 ✅ 已完成：16条目2-bit + 流水线集成 + MMIO统计 + 6性能文档 + 6补充图表
-9. **C** 上板验证 LED/数码管显示。（当前任务 🔴）
-10. **B** 扩展 LW/SW/Branch 仿真覆盖。
+9. ~~**B** 扩展 LW/SW/Branch 仿真覆盖。~~ ✅ 已完成
+10. ~~**B** 打通 VGA + `S1~S5` 按键交互演示。~~ ✅ 已完成
 11. **B/C** Vivado 综合流水线模式（MODE=5），导出 PPA 数据到 `reports/vivado/`。
-12. **A** 复核所有测试结果，整理 PPA 数据，写报告。
+12. **A** 复核所有测试结果，整理 PPA 数据和上板演示证据，写报告。
 
 ## 关键新文档（必读）
 
@@ -249,7 +253,7 @@ scripts/           后续 xsim/Vivado/Python 辅助脚本
 
 ## 开发前规则
 
-- 不要直接做 DDR3 / Cache / VGA / WiFi / 蓝牙 / 电机 / 触摸屏。
+- 不要直接做 DDR3 / Cache / WiFi / 蓝牙 / 电机 / 触摸屏；VGA 当前只作为已验证的板级演示前端，不作为 CPU MMIO 主线的必选外设。
 - 不要直接生成完整 CPU（组长A已完成代码框架，B/C/D在此基础上验证和扩展）。
 - 不要在未更新文档的情况下修改公共接口。
 - 不要直接在 `main` 上提交未验证代码。

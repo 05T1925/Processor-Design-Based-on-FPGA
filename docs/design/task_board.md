@@ -2,7 +2,7 @@
 
 用途：拆分合并后的开发任务，定义优先级、负责人、路径、依赖、完成标准和当前状态。
 
-最后更新时间：2026-07-09（组长A更新：整合 D 提交 PR #2 MAC/Perf 验证后进度 — 18 个新文件 + 12 个修改 + 4 个控制通路缺陷修复）
+最后更新时间：2026-07-12（同步 B 队友 2026-07-10/11 更新：LW/SW 与 BEQ/BNE 扩展仿真、VGA + S1~S5 按键小游戏骨架、相关报告表格与 README 状态）
 
 ## 1. 优先级定义
 
@@ -44,7 +44,7 @@ DONE          →  已完成
 | P0 | Vivado implementation | B | Vivado 2018.3 | synthesis通过 | **WHS=0.241ns, THS=0** ✅ | **DONE** |
 | P0 | bitstream 生成 | B | Vivado 2018.3 | impl通过 | **minisys_top.bit 已产出** ✅ | **DONE** |
 | P0 | 约束配置电压修复 | B | `constraints/minisys.xdc` | impl DRC | CFGBVS VCCO + CONFIG_VOLTAGE 3.3 已添加 | **DONE** |
-| P0 | 上板 LED/数码管 演示 | C | Minisys板 | bitstream | 有可展示结果 | **TODO** |
+| P0 | 上板 LED/数码管/VGA 演示 | B/C | Minisys板 | bitstream | LED/数码管最小链路可展示；VGA + S1~S5 小游戏骨架可演示，证据待归档 | **DONE** |
 
 ## 3. P1 任务（主线进阶）
 
@@ -59,8 +59,8 @@ DONE          →  已完成
 | P1 | PPA 表格初稿 | D | `reports/tables/` | 完整SoC Vivado数据 | ✅ 模板+字段定义+验收条件完成；真实数据待完整 SoC 综合 | **DONE** |
 | P1 | RV32I单周期wrapper接入 | A | `src/core/riscv_sc_wrapper.v` | 参考riscv-minisys-cpu | 占位已创建，P1填入真实逻辑 | **IN_PROGRESS** |
 | P1 | 性能计数器MMIO暴露 | D | `src/soc/soc_top.v`修改 | perf_counter验证通过 | ✅ Icarus 读回 cycle/instret/mac 通过（perf_mmio测试）；xsim 待补 | **DONE** |
-| P1 | LW/SW xsim 仿真 | B | `sim/tb/`、`tests/load_store/` | CPU basic通过 | 访存指令正确 | TODO |
-| P1 | BEQ/BNE xsim 仿真 | B | `sim/tb/`、`tests/branch/` | CPU basic通过 | 6种分支条件正确 | TODO |
+| P1 | LW/SW xsim 仿真 | B | `sim/tb/tb_load_store.v`、`tests/load_store/` | CPU basic通过 | `mem0=42 mem1=99 x3=42 x4=99 x5=141`，控制台 PASS | **DONE** |
+| P1 | BEQ/BNE xsim 仿真 | B | `sim/tb/tb_branch.v`、`tests/branch/` | CPU basic通过 | `x10=12 debug_pc=0x00000030`，控制台 PASS | **DONE** |
 
 ## 4. P2 任务（冲刺项，不阻塞主线）
 
@@ -71,15 +71,16 @@ DONE          →  已完成
 | P2 | BTB 分支预测 | A(P3) | `src/core/pipeline/btb.v` | 流水线原型 | 分支预测正确率可统计 | ✅ DONE |
 | P2 | 流水线仿真testbench | A | `sim/tb/tb_pipeline_basic.v` | 流水线RTL | xsim仿真通过 | ✅ DONE |
 | P2 | 更多性能分析图表 | A + D | `reports/tables/` | PPA数据 | 图表可用于答辩 | **DONE** ✅ |
+| P2 | VGA + 普通按键小游戏骨架 | B | `src/io/vga_button_demo.v`、`constraints/minisys.xdc` | VGA显示器 + S1~S5普通按键 | 开始页/输入页/结果页闭环，边框颜色反馈过低/过高/猜中 | **DONE** ✅ |
 | P2 | MIPS 模式接入 | A | `src/core/` | 参考minisys_unified各wrapper | CPU_MODE 2-4可用 | TODO |
 
-## 5. 成员职责索引（截至 2026-07-09）
+## 5. 成员职责索引（截至 2026-07-12）
 
 | 成员 | 已完成 | 当前任务 | 下一任务 |
 |---|---|---|---|
 | A 刘文涛 | ✅ 6仓库分析选型 + 24 RTL生成 + 文档同步 + 合规检查报告 + 7处RTL修复 + 演示程序设计方案 + 参考仓库溯源审计 + D PR合并后进度分析 + 五级流水线RTL + BTB动态分支预测 + 流水线冒险完整方案 + 性能可视化仪表板 + 12文档答辩数据体系 | ✅ 项目终检 + 文档同步 + AI日志补全 | Vivado综合流水线PPA数据、答辩文档终稿 |
-| B 张淇 | ✅ 4个testbench（ALU/regfile/control/CPU basic）全部xsim通过 + Vivado工程搭建 + Synthesis/Implementation/Bitstream全部通过（WNS=7.212ns, TNS=0, DRC=0）+ 约束电压配置修复 | 🔴 完整SoC重新综合（现有报告仅heartbeat，无效）+ utilization/timing数据导出 | LW/SW/branch仿真、CPU周期记录 |
-| C 胡文龙 | ✅ xsim全系统仿真验证通过 + 3处RTL bug诊断（pc_reg/$clog2/路径）+ Vivado 2017.4兼容性深度诊断 | 🔴 上板LED/数码管验证 | 上板演示录像/照片、UART（P2） |
+| B 张淇 | ✅ 4个testbench（ALU/regfile/control/CPU basic）全部xsim通过 + Vivado工程搭建 + Synthesis/Implementation/Bitstream全部通过（WNS=7.212ns, TNS=0, DRC=0）+ 约束电压配置修复 + LW/SW/BEQ/BNE 扩展仿真通过 + VGA/按键小游戏骨架上板验证 | 🔴 完整SoC/流水线重新综合（现有报告仅heartbeat，无效）+ utilization/timing数据导出 | 整理上板截图/视频证据、补充 VGA 游戏字符/随机数（可选） |
+| C 胡文龙 | ✅ xsim全系统仿真验证通过 + 3处RTL bug诊断（pc_reg/$clog2/路径）+ Vivado 2017.4兼容性深度诊断 | 🟡 配合整理上板LED/数码管/VGA演示证据 | UART（P2） |
 | D 王博生 | ✅ 6个testbench（MAC/perf/集成/点积对比/MMIO）Icarus全部通过 + 6个测试程序 + 4个报告文档 + 4个控制通路缺陷修复 + perf MMIO暴露 | 🔴 补Vivado xsim截图 | 配合B/C重跑完整SoC综合 |
 
 ## 6. Git 提交节点（已完成 → 待完成）
@@ -97,7 +98,8 @@ DONE          →  已完成
 ✅ feat: member D MAC/perf validation + control path fixes (PR #2) ← 2026-07-09 D 提交
 ⏳ test: complete SoC re-synthesis with utilization/timing reports → B/C 需重跑完整 SoC
 ⏳ board: on-board LED/SEG7 demo → C 待执行
-⏳ sim: LW/SW/branch extended testbenches → B 待执行
+✅ sim: LW/SW/branch extended testbenches → B 已完成（xsim PASS）
+✅ board: VGA + S1~S5 button guessing-game skeleton → B 已完成（上板可演示）
 ⏳ rtl: five-stage pipeline → A ✅ DONE (committed: 6881ed9)
 ⏳ rtl: BTB branch predictor → A ✅ DONE (committed: ab9fde6) 🆕
 ✅ docs: performance analysis tables and charts (committed: 2f98c3c) 🆕
@@ -114,8 +116,9 @@ DONE          →  已完成
 | Vivado 2017.4 Win11综合崩溃 | C的综合卡住 | C | 🔴 待解决 | 方案A: GUI模式 / 方案C: Win7兼容模式 / 换2018.3 |
 | 现有 Vivado 综合报告仅 heartbeat（2 LUT / 24 FF）| PPA 数据缺失 | B/C | 🔴 严重 | 需重跑完整 SoC 综合（不含 MINISYS_USE_HEARTBEAT），两版本（基线/MAC） |
 | 复位按钮极性待实测 | 上板可能异常 | C | 🟡 | Vivado最小工程实测P20 |
-| LW/SW/Branch测试未覆盖 | 指令验证不完整 | B | 🟡 | basic_test.hex已覆盖LW/SW/BEQ；D的点积程序已大量使用访存 |
-| 上板 LED/数码管 演示 | P0 唯一缺口 | C | 🔴 | bitstream 已生成，需上板 |
+| ~~LW/SW/Branch测试未覆盖~~ | ~~指令验证不完整~~ | B | ✅ 已解决 | `tb_load_store.v` 与 `tb_branch.v` 已 xsim PASS |
+| 4x4矩阵键盘按键无稳定响应 | 若坚持矩阵键盘会拖慢小游戏演示 | B | 🟡 已规避 | 当前正式演示路线切换为 `S1~S5` 普通按键 |
+| 上板演示证据归档不足 | 答辩材料缺照片/视频佐证 | B/C | 🟡 | 已有实物验证反馈，需补截图/照片/短视频到报告材料 |
 
 ## 8. Vivado 综合/实现验证结果（2026-07-09，B执行）
 
@@ -135,9 +138,9 @@ DONE          →  已完成
 ## 9. 项目整体完成度
 
 ```text
-P0 保底任务   ████████████████ 96%   (22/23 DONE，仅缺上板演示)
-P1 进阶任务   █████████████░░░ 82%   (9/11 DONE/IN_PROGRESS，仅缺 LW/SW/BEQ/BNE xsim + SoC综合)
-P2 冲刺任务   ████████████░░░░░░  63%   (5/8 DONE: 流水线RTL+forwarding+BTB+testbench+性能图表)
+P0 保底任务   ████████████████ 100%  (上板最小演示链路已打通，证据归档待补)
+P1 进阶任务   ███████████████░  91%  (LW/SW/BEQ/BNE 已补齐，仅缺完整SoC/流水线PPA实测)
+P2 冲刺任务   ██████████████░░  75%  (流水线RTL+forwarding+BTB+testbench+性能图表+VGA小游戏骨架)
 
 课程基础层次  █████████████████ 100%  (RTL + 仿真 + 综合 + 实现 + bitstream 全部完成)
 课程进阶层次  ████████████████░░  95%  (点积对比+perf MMIO+MAC验证+流水线RTL完成，缺完整SoC PPA)
@@ -148,6 +151,6 @@ P2 冲刺任务   ████████████░░░░░░  63%   
 
 | 状态 | 数量 | 任务 |
 |---|---|---|
-| **DONE** | 7 | mac_unit单测、perf_counter单测、普通点积、MAC点积、点积对比表、PPA模板、perf MMIO暴露 |
-| **IN_PROGRESS** | 2 | Vivado util/timing导出（B/C重跑完整SoC）、RV32I单周期wrapper（A） |
-| **TODO** | 2 | LW/SW xsim（B）、BEQ/BNE xsim（B） |
+| **DONE** | 9 | mac_unit单测、perf_counter单测、普通点积、MAC点积、点积对比表、PPA模板、perf MMIO暴露、LW/SW xsim、BEQ/BNE xsim |
+| **IN_PROGRESS** | 2 | Vivado util/timing导出（B/C重跑完整SoC/流水线）、RV32I单周期wrapper（A） |
+| **TODO** | 0 | B 的基础扩展仿真任务已清零 |

@@ -1,7 +1,7 @@
 # 课程三级目标完成度对照表
 
 > 对照：课程任务书"基础层次—进阶层次—拓展层次"
-> 日期：2026-07-08
+> 日期：2026-07-12
 > 评估人：A 刘文涛
 
 ---
@@ -21,14 +21,14 @@
 | 设计控制器 | ✅ **完成** | `src/core/control_unit.v`：250行，31+1条指令译码 | 基于riscv-minisys-cpu框架重写 |
 | Verilog实现 | ✅ **完成** | 24个RTL文件，~2100行Verilog | 详见整合报告 |
 | 综合、布局布线 | 🔄 **有条件完成** | Vivado工程待建（C负责），约束已验证 | 明早进实验室 |
-| 硬件验证（Minisys）| 🔄 **有条件完成** | 上板待Vivado bitstream完成后进行 | P20复位极性需上板实测 |
+| 硬件验证（Minisys）| ✅ **阶段完成** | Vivado bitstream 已生成；VGA + `S1~S5` 普通按键小游戏骨架已上板验证 | P20复位极性和正式照片/视频证据仍需归档 |
 | 支持算术指令 | ✅ **完成** | ADD/SUB/ADDI/SLT/SLTU/SLTI/SLTIU | `alu.v` ARITH类 |
 | 支持逻辑指令 | ✅ **完成** | AND/OR/XOR/ANDI/ORI/XORI | `alu.v` LOGIC类 |
 | 支持访存指令 | ✅ **完成** | LW/SW | `riscv_mc_cpu.v` MEMORY状态 |
 | 支持跳转指令 | ✅ **完成** | JAL/JALR/BEQ/BNE/BLT/BGE/BLTU/BGEU | `control_unit.v` + `branch_unit.v` |
-| 运行简单测试程序 | 🔄 **有条件完成** | `basic_test.hex` 已编码完成（11条指令，bug已修复） | 待xsim验证 |
+| 运行简单测试程序 | ✅ **完成** | `basic_test.hex`、`lw_sw_test.hex`、`beq_bne_test.hex` 均有仿真证据 | B 已补齐访存与分支扩展验证 |
 
-**基础层次完成度：11/12（92%），唯一缺口是 Vivado 综合实现 + 上板验证（硬件条件依赖）。**
+**基础层次完成度：12/12（100%）。Vivado 综合/实现/bitstream、基础 CPU 仿真、访存/分支扩展仿真与上板交互演示链路均已完成；剩余工作是证据归档和 PPA 数据精修。**
 
 ---
 
@@ -47,7 +47,7 @@
 | 存储层次规划 | ✅ **完成** | `docs/planning/optimization_roadmap.md` §方向2：Cache可行性分析 + BRAM层次说明 | 有规划文档 |
 | 基本I/O接口 | ✅ **完成** | LED(0xFFFF_FC00) + Switch(0xFFFF_FC10) + SEG7(0xFFFF_FC20) | 统一6端口bus slave |
 | 系统集成 | ✅ **完成** | `src/soc/soc_top.v`：CPU+ibus+dbus+decoder+mux+12外设 | 统一总线架构 |
-| 小型测试程序完整运行 | ✅ **完成** | basic_test.hex（xsim）+ dot_normal.hex/MAC.hex/retirement/perf_mmio（Icarus）共5个测试程序 | B+D验证通过 |
+| 小型测试程序完整运行 | ✅ **完成** | basic_test.hex、lw_sw_test.hex、beq_bne_test.hex（xsim）+ dot_normal.hex/MAC.hex/retirement/perf_mmio（Icarus） | B+D验证通过 |
 | 系统性能瓶颈分析 | ✅ **完成** | `csr_perf_counter.v` + `perf_comparison.md`：cycle/instret/mac数据 + CPI分析 + 停机开销分析 | D完成Icarus数据采集 |
 | 优化方案 | ✅ **完成** | `optimization_roadmap.md` 六方向分析 + `demo_program_design.md` 演示程序方案 | 有方案+数据支撑 |
 | 引入流水线机制 | 🔄 **有条件完成** | NCUT+SEU流水线参考已就位，`src/core/pipeline/`目录已预留 | D的P2任务，未启动 |
@@ -156,14 +156,14 @@
 | **完整SoC重新综合** | Vivado 2018.3 + 全部RTL + 未定义HEARTBEAT | PPA正式数据（两版本utilization/timing/DSP推断） | B/C |
 | **Vivado xsim复验** | Vivado 2018.3环境 | 所有testbench的xsim截图+波形 | D/B |
 | **流水线实现** | xsim基线通过 | 拓展层次方向①：forwarding/stall/flush | D |
-| **上板验证** | bitstream生成 | 全部层次的硬件演示（LED/SEG7） | C |
+| **上板证据归档** | bitstream 与 VGA/按键演示已通 | LED/SEG7/VGA 演示照片、短视频、截图材料 | B/C |
 
 ### 4.3 三层覆盖度总览
 
 ```text
-基础层次 █████████████████ 100% (RTL+仿真+综合+实现+bitstream全部完成，仅上板演示待C执行)
-进阶层次 ██████████████░░░  85% (系统集成+perfMMIO+CPI/吞吐量完成，流水线+完整SoC PPA待完成)
-拓展层次 █████████████░░░░  80% (MAC验证+点积对比+PPA模板完成，Vivado数据+流水线待完成)
+基础层次 █████████████████ 100% (RTL+仿真+综合+实现+bitstream+上板交互链路完成)
+进阶层次 ███████████████░░  90% (系统集成+perfMMIO+CPI/吞吐量+访存/分支扩展验证完成，完整SoC PPA待补)
+拓展层次 ████████████████░  95% (MAC+点积+流水线+BTB+VGA小游戏骨架完成，流水线PPA实测待补)
 ```
 
 ### 4.4 答辩时可以说的话

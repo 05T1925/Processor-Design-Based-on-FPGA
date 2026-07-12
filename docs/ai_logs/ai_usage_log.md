@@ -1324,3 +1324,37 @@
   - 本轮完成后，项目已经不再只是“VGA 能亮、按钮能动”的硬件测试，而是具备了实际可以演示的“猜数字游戏骨架界面”，对答辩展示的帮助明显大于单纯的彩条或移动方块
   - 目前骨架中使用固定目标值 `573`，这是为了优先保证交互闭环；如果后续时间允许，可继续把固定值替换成伪随机数（如 LFSR），进一步贴近完整小游戏设计
   - 若后续继续美化，建议优先级为：① 结果页增加更醒目的结果块或文字效果 ② 开始页增加标题图形 ③ 输入页增加次数/提示信息 ④ 最后再决定是否补字符 ROM 或更复杂图形
+
+### 记录编号：AI-20260712-01
+
+- 日期：2026-07-12
+- 成员：A 刘文涛
+- 负责模块：文档同步、进度表更新、报告表格修订
+- 工具：Codex
+- 使用阶段：队友 B 完成 LW/SW 与 BEQ/BNE 扩展仿真、VGA + S1~S5 按键小游戏骨架上板验证之后，统一同步 README、任务看板、课程进度、答辩讲稿与报告表格
+- 涉及文件：`README.md`、`docs/design/task_board.md`、`docs/planning/progress_checklist.md`、`docs/planning/defense_preparation.md`、`reports/tables/test_results.md`、`reports/tables/before_after_comparison.md`、`reports/tables/performance_summary.md`、`reports/tables/ppa_comparison.md`、`reports/tables/resource_utilization.md`
+- 提示词摘要：要求 Codex 以队友 B 的最新提交为准，更新相关 markdown 日志、README、项目进度文档和 `reports/tables` 下的数据对比文档，把已完成的扩展仿真与 VGA 上板演示写实，不要把尚未完成的 PPA 实测写成已完成。
+- AI 输出摘要：同步了 README 的项目阶段、任务分工和当前任务；把 `LW/SW`、`BEQ/BNE`、VGA + `S1~S5` 上板小游戏骨架从 TODO 改为已完成；补充了测试结果表、前后对比、性能总览、PPA 对比和资源利用说明；同时在 AI 日志中新增本条记录。
+- 人工审阅内容：需要确认是否把“实测”和“预估”混写，是否把 4x4 矩阵键盘误写成正式输入方案，是否把流水线 PPA 数据误写成已综合完成。
+- 人工修改内容：保持流水线 PPA、完整 SoC utilization/timing、VGA 字符显示和伪随机扩展仍为待做；正式演示路径统一为 `S1~S5 + VGA`。
+- 验证方式：交叉检查 README、任务看板、进度清单、答辩讲稿和表格文件中的状态词与日期；核对 `git status` 仅包含文档变更。
+- 验证结果：文档状态已与队友 B 的最新工作对齐，基础扩展仿真和 VGA 上板演示已写入已完成项；PPA 相关内容仍保留为待测或估计。
+- 是否合并：待提交
+- 备注：本条仅记录文档同步，不涉及 RTL 或 Vivado 工程修改。
+
+### 记录编号：AI-20260712-02
+
+- 日期：2026-07-12
+- 成员：A 刘文涛
+- 负责模块：队友 C 汇报 PPT / 网页界面生成材料包
+- 工具：Codex
+- 使用阶段：根据课程任务三层要求和项目现有文档，整理一份可直接交给队友 C 的 AI agent 生成 PPT 或技术网页的 Markdown 材料包
+- 涉及文件：`docs/planning/c_ppt_generation_pack.md`、`docs/ai_logs/ai_usage_log.md`
+- 提示词摘要：用户要求生成一份详细、完善、具体、覆盖全面的 Markdown 文档，供队友 C 根据现有项目内容生成汇报 PPT，重点体现 CPU 完整性、性能优化、效率提升成果，并提供直观数据和表格支撑。
+- AI 输出摘要：新增 `c_ppt_generation_pack.md`，按课程基础/进阶/拓展三层组织项目叙事，给出 15 页 PPT 推荐结构、核心数据表、CPU 完整性证明、功能验证矩阵、MAC 点积加速、流水线和 BTB 优化、PPA/资源口径、上板演示说明、PPT/网页生成提示词、3 分钟汇报话术和错误表述清单。
+- 人工审阅内容：重点检查是否把流水线 PPA 估计值写成 Vivado 实测，是否误称 4x4 矩阵键盘为正式演示路线，是否把 VGA 小游戏骨架夸大为完整 CPU 软件游戏。
+- 人工修改内容：明确标注流水线 CPI/MIPS/LUT/FF 为估计数据；正式演示输入统一为 `S1~S5 + VGA`；保留完整 SoC/流水线 PPA 实测、BTB 正确率统计、演示截图/视频归档为后续工作。
+- 验证方式：引用并交叉检查 `performance_summary.md`、`before_after_comparison.md`、`resource_utilization.md`、`ppa_comparison.md`、`test_results.md` 和 `defense_preparation.md` 中的关键数据。
+- 验证结果：材料包已生成，可直接作为 C 的 AI agent 输入；未修改 RTL 或 Vivado 工程。
+- 是否合并：待提交
+- 备注：本条用于记录本次面向汇报材料生成的 AI 辅助整理。
