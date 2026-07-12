@@ -1,7 +1,18 @@
 # 流水线冒险完整解决方案 — 数据前推与分支预测
 
-日期：2026-07-09
-负责人：D 王博生 + AI 辅助
+日期：2026-07-12
+原理论分析负责人：D 王博生 + AI 辅助
+2026-07-12 XSim 实测、RTL 调试与数据同步负责人：B 张淇 + AI 辅助
+
+---
+
+## 〇、XSim 实测结论（2026-07-12）
+
+`tb_pipeline_hazard` 在 Vivado 2018.3 XSim 下通过：28 cycle、17 instret、CPI 1.65。实测触发 EX/MEM 前递 6 次、MEM/WB 前递 4 次、load-use stall 1 次、branch flush 1 次、JAL flush 2 次。
+
+内存检查点依次为 `5, 8, 9, 15, 0, 42, 0, 88`，分别证明连续 RAW 前递、LW→ADDI、taken/not-taken branch、JAL 错误路径清除与 PC+4 链接正确。JALR flush 本程序计数为 0，不能据此宣称 JALR 已由该测试覆盖。
+
+本轮仿真暴露并修复三处 RTL 问题：寄存器堆缺少 WB→ID 同周期旁路；SW 的 MEM 前递错误比较 store 的 `rd` 字段而非 `rs2`；EX 阶段 taken branch 未清除正在进入 ID/EX 的年轻指令。
 
 ---
 
@@ -55,7 +66,7 @@ RISC-V RV32I 五级流水线（IF → ID → EX → MEM → WB）面临三类冒
 | **FWD_A_10** | MEM/WB.wb_data → EX.rs1 | mem_wb.reg_write && mem_wb.rd == id_ex.rs1 && rd ≠ x0 | 2'b10 | 0 |
 | **FWD_B_01** | EX/MEM.alu_result → EX.rs2 | ex_mem.reg_write && ex_mem.rd == id_ex.rs2 && rd ≠ x0 | 2'b01 | 0 |
 | **FWD_B_10** | MEM/WB.wb_data → EX.rs2 | mem_wb.reg_write && mem_wb.rd == id_ex.rs2 && rd ≠ x0 | 2'b10 | 0 |
-| **FWD_MEM** | MEM/WB.wb_data → MEM.store_data | mem_wb.reg_write && mem_wb.rd == ex_mem.rd | N/A | 0 |
+| **FWD_MEM** | MEM/WB.wb_data → MEM.store_data | mem_wb.reg_write && mem_wb.rd == ex_mem.rs2 | N/A | 0 |
 
 #### 1.2.3 RAW 冒险覆盖矩阵
 

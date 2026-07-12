@@ -59,31 +59,3 @@ Thumbs.db
 __pycache__/
 *.pyc
 
-# Keep the full shared Vivado project directory for teammates who need a ready-to-open project.
-!processor_fpga/
-!processor_fpga/processor_fpga.xpr
-!processor_fpga/processor_fpga.cache/
-!processor_fpga/processor_fpga.cache/**
-!processor_fpga/processor_fpga.hw/
-!processor_fpga/processor_fpga.hw/**
-!processor_fpga/processor_fpga.ip_user_files/
-!processor_fpga/processor_fpga.ip_user_files/**
-!processor_fpga/processor_fpga.runs/
-!processor_fpga/processor_fpga.runs/**
-!processor_fpga/processor_fpga.sim/
-!processor_fpga/processor_fpga.sim/**
-!processor_fpga/**/*.bit
-!processor_fpga/**/*.bin
-!processor_fpga/**/*.dcp
-!processor_fpga/**/*.gen
-!processor_fpga/**/*.hw
-!processor_fpga/**/*.jou
-!processor_fpga/**/*.log
-!processor_fpga/**/*.pb
-!processor_fpga/**/*.rpt
-!processor_fpga/**/*.rpx
-!processor_fpga/**/*.sim
-!processor_fpga/**/*.vdi
-!processor_fpga/**/*.wdb
-!processor_fpga/**/.Xil/
-!processor_fpga/**/.Xil/**

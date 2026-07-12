@@ -1325,36 +1325,36 @@
   - 目前骨架中使用固定目标值 `573`，这是为了优先保证交互闭环；如果后续时间允许，可继续把固定值替换成伪随机数（如 LFSR），进一步贴近完整小游戏设计
   - 若后续继续美化，建议优先级为：① 结果页增加更醒目的结果块或文字效果 ② 开始页增加标题图形 ③ 输入页增加次数/提示信息 ④ 最后再决定是否补字符 ROM 或更复杂图形
 
-### 记录编号：AI-20260712-01
+## 2026-07-12 B 张淇：五级流水线 XSim 仿真、冒险调试与实测数据同步
 
 - 日期：2026-07-12
-- 成员：A 刘文涛
-- 负责模块：文档同步、进度表更新、报告表格修订
-- 工具：Codex
-- 使用阶段：队友 B 完成 LW/SW 与 BEQ/BNE 扩展仿真、VGA + S1~S5 按键小游戏骨架上板验证之后，统一同步 README、任务看板、课程进度、答辩讲稿与报告表格
-- 涉及文件：`README.md`、`docs/design/task_board.md`、`docs/planning/progress_checklist.md`、`docs/planning/defense_preparation.md`、`reports/tables/test_results.md`、`reports/tables/before_after_comparison.md`、`reports/tables/performance_summary.md`、`reports/tables/ppa_comparison.md`、`reports/tables/resource_utilization.md`
-- 提示词摘要：要求 Codex 以队友 B 的最新提交为准，更新相关 markdown 日志、README、项目进度文档和 `reports/tables` 下的数据对比文档，把已完成的扩展仿真与 VGA 上板演示写实，不要把尚未完成的 PPA 实测写成已完成。
-- AI 输出摘要：同步了 README 的项目阶段、任务分工和当前任务；把 `LW/SW`、`BEQ/BNE`、VGA + `S1~S5` 上板小游戏骨架从 TODO 改为已完成；补充了测试结果表、前后对比、性能总览、PPA 对比和资源利用说明；同时在 AI 日志中新增本条记录。
-- 人工审阅内容：需要确认是否把“实测”和“预估”混写，是否把 4x4 矩阵键盘误写成正式输入方案，是否把流水线 PPA 数据误写成已综合完成。
-- 人工修改内容：保持流水线 PPA、完整 SoC utilization/timing、VGA 字符显示和伪随机扩展仍为待做；正式演示路径统一为 `S1~S5 + VGA`。
-- 验证方式：交叉检查 README、任务看板、进度清单、答辩讲稿和表格文件中的状态词与日期；核对 `git status` 仅包含文档变更。
-- 验证结果：文档状态已与队友 B 的最新工作对齐，基础扩展仿真和 VGA 上板演示已写入已完成项；PPA 相关内容仍保留为待测或估计。
+- 成员：B 张淇
+- 负责模块：五级流水线 Vivado XSim 验证、冒险处理调试、波形证据和报告数据同步
+- 工具：Codex（GPT-5）+ PowerShell + Vivado 2018.3 XSim
+- 使用阶段：
+  - 检查流水线 RTL、testbench 和 HEX 程序的工程加入情况，处理缺少源文件、`$readmemh` 路径失效和 Vivado 2018.3 语法兼容问题
+  - 运行 `tb_pipeline_basic.v`，核对寄存器和 RAM 检查点，并保存 IF/ID、ID/EX、EX/MEM、MEM/WB 四级 valid 波形证据
+  - 新增并运行 `tb_pipeline_hazard.v`，用连续 RAW、load-use、taken/not-taken branch 和 JAL 程序验证前递、停顿和冲刷
+  - 根据失败的 RAM 检查点和冒险计数器定位 RTL 问题，完成修复后重跑 XSim 直至 PASS
+  - 将实测值同步到 `README.md`、`reports/tables/` 及进度清单，并明确区分短程序实测 CPI 与长程序模型估算
+- 涉及文件：
+  - RTL：`src/core/riscv_pipeline_cpu.v`、`src/core/regfile.v`
+  - 仿真：`sim/tb/tb_pipeline_basic.v`、`sim/tb/tb_pipeline_hazard.v`、`sim/programs/basic_test.hex`、`tests/pipeline/hazard_test.hex`
+  - 辅助脚本：`scripts/capture_pipeline_basic_wave.tcl`
+  - 文档：`README.md`、`reports/tables/performance_summary.md`、`cpi_breakdown.md`、`pipeline_hazard_analysis.md`、`test_results.md`、`before_after_comparison.md`、`docs/planning/progress_checklist.md`
+- AI 输出与人工修改摘要：
+  - 修复 Vivado 不支持对算术表达式直接位选的语法，使用中间 wire 保持逻辑等价
+  - 为寄存器堆增加 WB→ID 同周期旁路，解决 ID 阶段读到旧值的问题
+  - 修正 SW 存储数据前递的寄存器号比较，由错误比较 store `rd` 改为比较 `rs2`
+  - 修正 taken branch/JALR 的 ID/EX 冲刷范围，确保错误路径年轻指令被清除，同时分支指令本身能继续退休
+- 验证结果：
+  - `tb_pipeline_basic`：PASS，10 cycle / 6 instret，CPI = 1.67，`x3=x6=RAM[0]=30`
+  - `tb_pipeline_hazard`：PASS，28 cycle / 17 instret，CPI = 1.65
+  - 冒险计数：EX/MEM 前递 6 次、MEM/WB 前递 4 次、load-use stall 1 次、branch flush 1 次、JAL flush 2 次
+  - RAM 检查点：`5, 8, 9, 15, 0, 42, 0, 88`，全部符合预期
+- 待后续人工验证：
+  - JALR 在本次冒险程序中未触发，需专项 XSim 程序
+  - BTB 命中率、预测正确率和别名冲突率仍需循环程序实测
+  - LUT/FF/BRAM/DSP、WNS/TNS/Fmax 和功耗需在 `CPU_MODE=5` 的完整 SoC 综合与实现后导出
 - 是否合并：待提交
-- 备注：本条仅记录文档同步，不涉及 RTL 或 Vivado 工程修改。
-
-### 记录编号：AI-20260712-02
-
-- 日期：2026-07-12
-- 成员：A 刘文涛
-- 负责模块：队友 C 汇报 PPT / 网页界面生成材料包
-- 工具：Codex
-- 使用阶段：根据课程任务三层要求和项目现有文档，整理一份可直接交给队友 C 的 AI agent 生成 PPT 或技术网页的 Markdown 材料包
-- 涉及文件：`docs/planning/c_ppt_generation_pack.md`、`docs/ai_logs/ai_usage_log.md`
-- 提示词摘要：用户要求生成一份详细、完善、具体、覆盖全面的 Markdown 文档，供队友 C 根据现有项目内容生成汇报 PPT，重点体现 CPU 完整性、性能优化、效率提升成果，并提供直观数据和表格支撑。
-- AI 输出摘要：新增 `c_ppt_generation_pack.md`，按课程基础/进阶/拓展三层组织项目叙事，给出 15 页 PPT 推荐结构、核心数据表、CPU 完整性证明、功能验证矩阵、MAC 点积加速、流水线和 BTB 优化、PPA/资源口径、上板演示说明、PPT/网页生成提示词、3 分钟汇报话术和错误表述清单。
-- 人工审阅内容：重点检查是否把流水线 PPA 估计值写成 Vivado 实测，是否误称 4x4 矩阵键盘为正式演示路线，是否把 VGA 小游戏骨架夸大为完整 CPU 软件游戏。
-- 人工修改内容：明确标注流水线 CPI/MIPS/LUT/FF 为估计数据；正式演示输入统一为 `S1~S5 + VGA`；保留完整 SoC/流水线 PPA 实测、BTB 正确率统计、演示截图/视频归档为后续工作。
-- 验证方式：引用并交叉检查 `performance_summary.md`、`before_after_comparison.md`、`resource_utilization.md`、`ppa_comparison.md`、`test_results.md` 和 `defense_preparation.md` 中的关键数据。
-- 验证结果：材料包已生成，可直接作为 C 的 AI agent 输入；未修改 RTL 或 Vivado 工程。
-- 是否合并：待提交
-- 备注：本条用于记录本次面向汇报材料生成的 AI 辅助整理。
+- 备注：本记录所述的 2026-07-12 流水线仿真、调试、波形和实测数据同步工作均由 B 张淇完成；文档中原有的 A/D 早期架构、MAC 与理论分析成果仍按原贡献归属保留。

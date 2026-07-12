@@ -104,6 +104,7 @@ module riscv_pipeline_cpu (
     reg [31:0] ex_mem_pc_plus_4;
     reg [31:0] ex_mem_alu_result;
     reg [31:0] ex_mem_rs2_data;       // Possibly forwarded store data
+    reg [4:0]  ex_mem_rs2_addr;       // Store source register for MEM forwarding
     reg [4:0]  ex_mem_rd_addr;
     reg        ex_mem_reg_write;
     reg        ex_mem_mem_read;
@@ -144,7 +145,9 @@ module riscv_pipeline_cpu (
     assign jal_target_w = if_id_pc + id_imm_w;
 
     // JALR target (EX stage): forwarded rs1 + immediate, LSB clear
-    assign jalr_target_w = { (forward_rs1_data + id_ex_imm)[31:1], 1'b0 };
+    wire [31:0] jalr_target_sum_w;
+    assign jalr_target_sum_w = forward_rs1_data + id_ex_imm;
+    assign jalr_target_w = {jalr_target_sum_w[31:1], 1'b0};
 
     // Branch target (EX stage): ID/EX PC + immediate
     assign branch_target_w = id_ex_pc + id_ex_imm;
@@ -481,7 +484,7 @@ module riscv_pipeline_cpu (
     // (when SW follows an ALU instruction that writes its rs2 source)
     assign mem_rs2_forwarded = (mem_wb_reg_write && mem_wb_valid &&
                                 (mem_wb_rd_addr != 5'b0) &&
-                                (mem_wb_rd_addr == ex_mem_rd_addr)) ?
+                                (mem_wb_rd_addr == ex_mem_rs2_addr)) ?
                                 mem_wb_wb_data : ex_mem_rs2_data;
 
     //==========================================================================
@@ -592,11 +595,9 @@ module riscv_pipeline_cpu (
     // Combined flush for IF/ID: any redirect or halt
     wire flush_ifid = jal_flush || jalr_flush || branch_flush || ebreak_halt || halted_w;
 
-    // Combined flush for ID/EX: only EBREAK kills the ID/EX stage.
-    // Branch/JALR in EX must NOT kill themselves — they need to reach WB.
-    // Their PC redirect + flush_ifid already kills the younger instruction;
-    // the bubble then propagates naturally through ID/EX → EX/MEM → MEM/WB.
-    wire flush_idex = ebreak_halt;
+    // Kill the younger ID-stage instruction after an EX-stage redirect. The
+    // branch/JALR itself still advances independently into EX/MEM below.
+    wire flush_idex = branch_flush || jalr_flush || ebreak_halt;
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -633,6 +634,7 @@ module riscv_pipeline_cpu (
             ex_mem_pc_plus_4    <= `ZERO_WORD;
             ex_mem_alu_result   <= `ZERO_WORD;
             ex_mem_rs2_data     <= `ZERO_WORD;
+            ex_mem_rs2_addr     <= 5'b0;
             ex_mem_rd_addr      <= 5'b0;
             ex_mem_reg_write    <= `FALSE;
             ex_mem_mem_read     <= `FALSE;
@@ -681,6 +683,7 @@ module riscv_pipeline_cpu (
             ex_mem_pc_plus_4    <= id_ex_pc + 32'd4;
             ex_mem_alu_result   <= id_ex_is_mac ? ex_mac_result : ex_alu_out;
             ex_mem_rs2_data     <= forward_rs2_data;
+            ex_mem_rs2_addr     <= id_ex_rs2_addr;
             ex_mem_rd_addr      <= id_ex_rd_addr;
             ex_mem_reg_write    <= id_ex_reg_write;
             ex_mem_mem_read     <= id_ex_mem_read;
@@ -689,7 +692,7 @@ module riscv_pipeline_cpu (
             ex_mem_is_mac       <= id_ex_is_mac;
             ex_mem_instret_pulse <= id_ex_instret_pulse;
             ex_mem_mac_pulse    <= id_ex_mac_pulse;
-            ex_mem_valid        <= id_ex_valid && !flush_idex;
+            ex_mem_valid        <= id_ex_valid;
 
             //==============================================================
             // ID/EX ← IF/ID (NOP if stall, EX flush, or ebreak)

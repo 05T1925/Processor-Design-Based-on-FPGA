@@ -47,7 +47,7 @@ module tb_pipeline_basic;
 
         // Load basic test program (same as multi-cycle test)
         $readmemh(
-            "sim/programs/basic_test.hex",
+            "C:/Users/rolle/Processor-Design-Based-on-FPGA/sim/programs/basic_test.hex",
             uut.inst_ram_inst.mem,
             0,
             10
@@ -83,7 +83,7 @@ module tb_pipeline_basic;
         $display("debug_state = 0x%02X", debug_state);
         $display("cpu_cycle   = %0d", cpu_cycle);
         $display("cpu_instret = %0d", cpu_instret);
-        $display("data_ram[0x10000000] = 0x%08X", uut.data_ram_inst.mem[32'h10000000 >> 2]);
+        $display("data_ram[0x10000000] = 0x%08X", uut.data_ram_inst.mem[0]);
         $display("reg_x3 = 0x%08X", reg_x3);
         $display("reg_x6 = 0x%08X", reg_x6);
         $display("FAIL: timeout");
@@ -123,11 +123,11 @@ module tb_pipeline_basic;
                          cpu_cycle, cpu_instret,
                          $itor(cpu_cycle) / $itor(cpu_instret));
             $display("data_ram[0x10000000] = 0x%08X",
-                     uut.data_ram_inst.mem[32'h10000000 >> 2]);
+                      uut.data_ram_inst.mem[0]);
             $display("reg_x3 = 0x%08X (expected 0x0000001E = 30)", reg_x3);
             $display("reg_x6 = 0x%08X (expected 0x0000001E = 30)", reg_x6);
 
-            if (uut.data_ram_inst.mem[32'h10000000 >> 2] == 32'd30 &&
+            if (uut.data_ram_inst.mem[0] == 32'd30 &&
                 reg_x3 == 32'd30 &&
                 reg_x6 == 32'd30) begin
                 $display("PASS: Pipeline CPU basic test passed");

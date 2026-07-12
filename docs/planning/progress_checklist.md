@@ -1,7 +1,7 @@
-# 课程三级目标完成度对照表
+﻿# 课程三级目标完成度对照表
 
 > 对照：课程任务书"基础层次—进阶层次—拓展层次"
-> 日期：2026-07-12
+> 日期：2026-07-08
 > 评估人：A 刘文涛
 
 ---
@@ -20,15 +20,15 @@
 | 设计数据通路 | ✅ **完成** | `docs/design/architecture.md`：6状态多周期FSM + 系统框图 | 组长A独立设计 |
 | 设计控制器 | ✅ **完成** | `src/core/control_unit.v`：250行，31+1条指令译码 | 基于riscv-minisys-cpu框架重写 |
 | Verilog实现 | ✅ **完成** | 24个RTL文件，~2100行Verilog | 详见整合报告 |
-| 综合、布局布线 | 🔄 **有条件完成** | Vivado工程待建（C负责），约束已验证 | 明早进实验室 |
-| 硬件验证（Minisys）| ✅ **阶段完成** | Vivado bitstream 已生成；VGA + `S1~S5` 普通按键小游戏骨架已上板验证 | P20复位极性和正式照片/视频证据仍需归档 |
+| 综合、布局布线 | ✅ **完成** | Vivado 2018.3 综合/实现/bitstream 通过，WNS=+7.212ns、TNS=0、DRC=0 | 该数据为基础 SoC，不代表 MODE=5 流水线 PPA |
+| 硬件验证（Minisys）| ✅ **完成** | bitstream 已下载；CPU-MMIO Switch→LED/SEG7 交互已上板验证 | B 张淇实物验证；VGA+S1-S5 交互也已打通 |
 | 支持算术指令 | ✅ **完成** | ADD/SUB/ADDI/SLT/SLTU/SLTI/SLTIU | `alu.v` ARITH类 |
 | 支持逻辑指令 | ✅ **完成** | AND/OR/XOR/ANDI/ORI/XORI | `alu.v` LOGIC类 |
 | 支持访存指令 | ✅ **完成** | LW/SW | `riscv_mc_cpu.v` MEMORY状态 |
 | 支持跳转指令 | ✅ **完成** | JAL/JALR/BEQ/BNE/BLT/BGE/BLTU/BGEU | `control_unit.v` + `branch_unit.v` |
-| 运行简单测试程序 | ✅ **完成** | `basic_test.hex`、`lw_sw_test.hex`、`beq_bne_test.hex` 均有仿真证据 | B 已补齐访存与分支扩展验证 |
+| 运行简单测试程序 | ✅ **完成** | CPU basic、LW/SW、BEQ/BNE 和流水线 basic XSim 均 PASS | 流水线 basic=10 cycle / 6 instret |
 
-**基础层次完成度：12/12（100%）。Vivado 综合/实现/bitstream、基础 CPU 仿真、访存/分支扩展仿真与上板交互演示链路均已完成；剩余工作是证据归档和 PPA 数据精修。**
+**基础层次完成度：12/12（100%）。RTL、仿真、综合、实现、bitstream 和 CPU-MMIO 上板交互均已完成。**
 
 ---
 
@@ -47,15 +47,15 @@
 | 存储层次规划 | ✅ **完成** | `docs/planning/optimization_roadmap.md` §方向2：Cache可行性分析 + BRAM层次说明 | 有规划文档 |
 | 基本I/O接口 | ✅ **完成** | LED(0xFFFF_FC00) + Switch(0xFFFF_FC10) + SEG7(0xFFFF_FC20) | 统一6端口bus slave |
 | 系统集成 | ✅ **完成** | `src/soc/soc_top.v`：CPU+ibus+dbus+decoder+mux+12外设 | 统一总线架构 |
-| 小型测试程序完整运行 | ✅ **完成** | basic_test.hex、lw_sw_test.hex、beq_bne_test.hex（xsim）+ dot_normal.hex/MAC.hex/retirement/perf_mmio（Icarus） | B+D验证通过 |
+| 小型测试程序完整运行 | ✅ **完成** | basic_test.hex（xsim）+ dot_normal.hex/MAC.hex/retirement/perf_mmio（Icarus）共5个测试程序 | B+D验证通过 |
 | 系统性能瓶颈分析 | ✅ **完成** | `csr_perf_counter.v` + `perf_comparison.md`：cycle/instret/mac数据 + CPI分析 + 停机开销分析 | D完成Icarus数据采集 |
 | 优化方案 | ✅ **完成** | `optimization_roadmap.md` 六方向分析 + `demo_program_design.md` 演示程序方案 | 有方案+数据支撑 |
-| 引入流水线机制 | 🔄 **有条件完成** | NCUT+SEU流水线参考已就位，`src/core/pipeline/`目录已预留 | D的P2任务，未启动 |
+| 引入流水线机制 | ✅ **完成并实测** | `riscv_pipeline_cpu.v`；XSim basic=10/6、hazard=28/17，均 PASS | forwarding/stall/flush 已验证 |
 | 时钟频率量化评估 | 🔄 **有条件完成** | 需完整SoC Vivado timing report（现有heartbeat WNS=7.212ns不代表完整SoC） | B/C需重跑完整SoC综合 |
 | CPI量化评估 | ✅ **完成** | dot_normal CPI=4.1333, dot_mac CPI=4.1538（主体CPI=4.0，含EBREAK停机开销） | D完成Icarus数据 |
 | 吞吐量量化评估 | ✅ **完成** | MAC dot speedup=1.1481，cycle↓12.90%，instret↓13.33% | D完成点积对比 |
 
-**进阶层次完成度：10/12 已完成（✅），2/12 有条件完成（流水线 + 完整SoC PPA数据）。**
+**进阶层次完成度：11/12 已完成（✅），1/12 有条件完成（完整 SoC 流水线 PPA 数据）。**
 
 ---
 
@@ -71,12 +71,12 @@
 
 | 子项 | 状态 | 证据 |
 |---|---|---|
-| 数据前推(forwarding) | 🔄 **有条件** | NCUT `id.v` 前推逻辑参考已分析，`src/core/pipeline/` 目录预留 |
-| load-use stall | 🔄 **有条件** | SEU minisys `ppl_scheduler.v` 参考已分析 |
-| branch flush | 🔄 **有条件** | 同上 |
-| 分支预测(BTB) | 🔄 **有条件** | SEU minisys `BTB.v` 参考已分析（2028行，分支目标缓冲） |
+| 数据前推(forwarding) | ✅ **XSim通过** | EX/MEM 6次、MEM/WB 4次；RAM检查点正确 |
+| load-use stall | ✅ **XSim通过** | 精确触发1次，LW→ADDI结果15 |
+| branch flush | ✅ **XSim通过** | taken branch触发1次，错误路径RAM保持0 |
+| 分支预测(BTB) | 🔄 **RTL完成，专项待测** | 16条目2-bit BTB已集成；正确率尚未实测 |
 
-**结论**：设计已就绪，参考代码已到位，P1可实现。
+**结论**：流水线冒险主路径已在 Vivado 2018.3 XSim 下实测通过；JALR 与 BTB 正确率仍需专项测试。
 
 #### 方向②：Cache替换策略优化与命中率分析
 
@@ -154,16 +154,15 @@
 | 条件 | 依赖 | 解锁后可完成的内容 | 负责人 |
 |---|---|---|---|
 | **完整SoC重新综合** | Vivado 2018.3 + 全部RTL + 未定义HEARTBEAT | PPA正式数据（两版本utilization/timing/DSP推断） | B/C |
-| **Vivado xsim复验** | Vivado 2018.3环境 | 所有testbench的xsim截图+波形 | D/B |
-| **流水线实现** | xsim基线通过 | 拓展层次方向①：forwarding/stall/flush | D |
-| **上板证据归档** | bitstream 与 VGA/按键演示已通 | LED/SEG7/VGA 演示照片、短视频、截图材料 | B/C |
+| **Vivado xsim复验** | Vivado 2018.3环境 | BTB/JALR专项testbench截图+波形 | D/B |
+| **上板验证** | bitstream生成 | ✅ CPU-MMIO LED/SEG7 和 VGA+S1-S5 交互已验证；流水线 MODE=5 上板非当前证据 | B 张淇 |
 
 ### 4.3 三层覆盖度总览
 
 ```text
-基础层次 █████████████████ 100% (RTL+仿真+综合+实现+bitstream+上板交互链路完成)
-进阶层次 ███████████████░░  90% (系统集成+perfMMIO+CPI/吞吐量+访存/分支扩展验证完成，完整SoC PPA待补)
-拓展层次 ████████████████░  95% (MAC+点积+流水线+BTB+VGA小游戏骨架完成，流水线PPA实测待补)
+基础层次 █████████████████ 100% (RTL+仿真+综合+实现+bitstream+CPU-MMIO上板交互全部完成)
+进阶层次 ████████████████░  92% (系统集成+流水线XSim+CPI完成，完整SoC PPA待完成)
+拓展层次 ███████████████░░  90% (MAC+流水线冒险实测完成，BTB专项与Vivado PPA待完成)
 ```
 
 ### 4.4 答辩时可以说的话
@@ -176,4 +175,4 @@
 
 1. **自定义ISA扩展（方向④）** + **AI加速指令（方向⑤）**：设计了MAC乘加自定义指令（编码：opcode=0001011, funct7=0000001），语义为`rd_new = rd_old + rs1 * rs2`，实现了组合逻辑MAC单元、regfile三读口、DSP48E1推断。编写了普通点积与MAC点积对比程序，量化了性能提升。这个模块在五个参考仓库中均无实现，属于我们组的完全独立设计。
 
-2. **多方案PPA对比（方向⑥）**：利用CPU_MODE参数化设计，在同一个Vivado工程中对比了RV32I多周期FSM、RV32I单周期、MIPS单周期、MIPS五级流水线四种方案的PPA数据，在功耗-性能-面积三角约束下给出了设计权衡分析。
+2. **多方案PPA对比（方向⑥）**：已利用 CPU_MODE 参数化设计建立统一对比框架。当前流水线 LUT/FF、WNS/Fmax 和功耗仍为估算，需完整 SoC MODE=5 综合实现后才能形成定量 PPA 对比结论。
