@@ -134,6 +134,12 @@ module riscv_pipeline_cpu (
     wire [31:0] jal_target_w;       // JAL target (ID stage)
     wire [31:0] jalr_target_w;      // JALR target (EX stage, with forwarding)
     wire [31:0] branch_target_w;    // Branch target (EX stage)
+    wire [31:0] branch_recovery_w;
+    wire [31:0] id_imm_w;
+    wire [31:0] forward_rs1_data;
+    wire [31:0] btb_predict_target;
+    wire        use_btb_prediction;
+    wire        ex_br_taken;
     wire        stall_w;
     wire        jal_flush;          // JAL flush (ID stage)
     wire        jalr_flush;         // JALR flush (EX stage)
@@ -154,7 +160,8 @@ module riscv_pipeline_cpu (
 
     // Next-PC priority: EX mispred recovery > EX JALR > ID JAL > BTB prediction > PC+4
     wire [31:0] pc_next;
-    assign pc_next = branch_flush    ? branch_target_w :
+    assign branch_recovery_w = ex_br_taken ? branch_target_w : id_ex_pc + 32'd4;
+    assign pc_next = branch_flush    ? branch_recovery_w :
                      jalr_flush      ? jalr_target_w   :
                      jal_flush       ? jal_target_w    :
                      use_btb_prediction ? btb_predict_target :
@@ -167,8 +174,6 @@ module riscv_pipeline_cpu (
     wire [31:0] id_rs1_data_w;
     wire [31:0] id_rs2_data_w;
     wire [31:0] id_rd_old_data_w;
-    wire [31:0] id_imm_w;
-
     // Control unit outputs (combinational, driven by current IF/ID instruction)
     wire [`ALUOP_BUS]   ctrl_alu_op;
     wire [`ALUTYPE_BUS] ctrl_alu_type;
@@ -208,12 +213,10 @@ module riscv_pipeline_cpu (
     wire [31:0] ex_alu_out;
     wire        ex_alu_zero;
     wire [31:0] ex_mac_result;
-    wire        ex_br_taken;
 
     // Forwarding control (2-bit: 00=reg, 01=EX/MEM, 10=MEM/WB)
     reg  [1:0]  forward_rs1_sel;
     reg  [1:0]  forward_rs2_sel;
-    wire [31:0] forward_rs1_data;
     wire [31:0] forward_rs2_data;
 
     //==========================================================================
@@ -249,14 +252,12 @@ module riscv_pipeline_cpu (
     // Benefit: fewer taken-branch flushes (only on misprediction, not every taken branch)
     //==========================================================================
     wire        btb_predict_taken;
-    wire [31:0] btb_predict_target;
     wire [31:0] btb_lookup_cnt;
     wire [31:0] btb_hit_cnt;
     wire [31:0] btb_mispred_cnt;
 
     // BTB prediction is used for PC selection in IF stage
     // Only redirect when BTB predicts taken AND we haven't already taken a branch
-    wire        use_btb_prediction;
     assign use_btb_prediction = btb_predict_taken && !branch_flush && !jalr_flush && !jal_flush;
 
     // BTB update: triggered when a conditional branch resolves in EX stage
@@ -378,10 +379,13 @@ module riscv_pipeline_cpu (
     );
 
     // ALU B input (immediate or forwarded rs2)
-    assign ex_alu_in_b = id_ex_alu_src_imm ? id_ex_imm : forward_rs2_data;
+    assign ex_alu_in_b = (id_ex_alu_type == `ALUTYPE_SHIFT) ? forward_rs1_data :
+                         id_ex_alu_src_imm ? id_ex_imm : forward_rs2_data;
 
     // ALU A input (special cases for JALR, AUIPC, JAL)
-    assign ex_alu_in_a = id_ex_jump_reg                    ? id_ex_rs1_data :    // JALR: rs1
+    assign ex_alu_in_a = (id_ex_alu_type == `ALUTYPE_SHIFT) ?
+                            (id_ex_alu_src_imm ? id_ex_imm : forward_rs2_data) :
+                         id_ex_jump_reg                    ? id_ex_rs1_data :    // JALR: rs1
                          (id_ex_alu_op == `ALUOP_AUIPC)    ? id_ex_pc :
                          (id_ex_alu_type == `ALUTYPE_JUMP) ? id_ex_pc :
                                                               forward_rs1_data;
@@ -503,14 +507,12 @@ module riscv_pipeline_cpu (
     // JALR flush: JALR proceeds through ID→EX, resolved in EX with forwarding
     assign jalr_flush = id_ex_valid && id_ex_jump_reg;
 
-    // Branch flush: taken branch in EX stage → flush IF/ID + ID/EX
-    // With BTB: only flush if BTB did NOT predict taken (i.e., misprediction).
-    // If BTB correctly predicted taken, the IF stage already fetched from target.
+    // Flush and recover whenever prediction and actual branch outcome disagree.
+    // This includes loop exit: predicted taken but actually not taken.
     assign branch_flush = id_ex_valid &&
                           (id_ex_alu_type == `ALUTYPE_JUMP) &&
                           !id_ex_jump && !id_ex_jump_reg &&
-                          ex_br_taken &&
-                          !id_ex_btb_pred_taken;  // BTB misprediction only
+                          (ex_br_taken != id_ex_btb_pred_taken);
 
     // EBREAK halt: detected in ID stage
     assign ebreak_halt = if_id_valid && ctrl_halt;

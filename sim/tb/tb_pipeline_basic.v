@@ -47,7 +47,7 @@ module tb_pipeline_basic;
 
         // Load basic test program (same as multi-cycle test)
         $readmemh(
-            "C:/Users/rolle/Processor-Design-Based-on-FPGA/sim/programs/basic_test.hex",
+            "sim/programs/basic_test.hex",
             uut.inst_ram_inst.mem,
             0,
             10

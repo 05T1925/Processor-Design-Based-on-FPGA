@@ -247,6 +247,8 @@ module control_unit (
                 jump_reg      = `TRUE;
                 alu_src_imm   = `TRUE;
                 imm_sel       = IMM_I;
+                alu_type      = `ALUTYPE_JUMP;
+                alu_op        = `ALUOP_ADD;
                 wb_sel        = WB_PC4;
                 instret_pulse = `TRUE;
             end

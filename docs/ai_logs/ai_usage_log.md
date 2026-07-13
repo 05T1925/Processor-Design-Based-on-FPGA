@@ -1358,3 +1358,25 @@
   - LUT/FF/BRAM/DSP、WNS/TNS/Fmax 和功耗需在 `CPU_MODE=5` 的完整 SoC 综合与实现后导出
 - 是否合并：待提交
 - 备注：本记录所述的 2026-07-12 流水线仿真、调试、波形和实测数据同步工作均由 B 张淇完成；文档中原有的 A/D 早期架构、MAC 与理论分析成果仍按原贡献归属保留。
+
+## 2026-07-13 项目终检、验收归档与文档同步
+
+- 日期：2026-07-13
+- 成员：项目组（最终验收已完成）；本次文档终检由 A / Codex 辅助完成
+- 工具：Codex（GPT-5）+ PowerShell + Git；只读取现有 Vivado/XSim 产物，不重新伪造或替代硬件实验
+- 用户确认的外部完成事项：流水线测试、流水线上板与 PPA 已由另一名队友完成；项目当日上午已完成验收。
+- 本次 AI 工作：
+  - 读取当前 RTL、测试程序、testbench、构建脚本、Vivado 报告和 Git 工作区，建立源文件、测试文件与本地 bitstream 的对应关系。
+  - 重写 `README.md` 为最终项目入口：写明主板演示架构、MMIO 计数链路、按键操作、32 条主功能指令的口径、程序/测试/bitstream 对照和可复现步骤。
+  - 重写 `docs/PROJECT_INDEX.md`，将早期“目录为空、RTL待实现”的初始状态更新为当前真实文件索引，并列出所有 testbench 的覆盖范围。
+  - 更新任务看板、进度清单、流水线 bitstream 指南、答辩准备、PPA 表和 Vivado 报告说明，使“验收完成”的最终状态与历史过程记录可区分。
+  - 明确 PPA 证据规范：仓库内 `cpu_vga_*.rpt` 可直接复核当前 VGA SoC 的实现数据；流水线最终 PPA 数字必须引用负责队友交付的同一 `CPU_MODE=5` implementation 报告；早期估算和 heartbeat 报告不得伪称实测。
+- 核查结果：
+  - `tests/demo/cpu_guess_game.S/.hex` 是 CPU 驱动 PAGE 1/2/3/4（含 Tetris）VGA 演示程序；板上 ROM 文件 `processor_fpga/boot_rom.mem` 由该类机器码镜像供给。
+  - CPU 游戏 testbench 验证的是 `BTN MMIO read -> RV32I branch -> VGA MMIO write -> button ACK` 的真实数据路径，而非仅验证渲染模块。
+  - 现有 `reports/vivado/cpu_vga_timing_summary.rpt` 记录的 VGA SoC 时序为 WNS `+0.464 ns`、TNS `0`、WHS `+0.030 ns`、THS `0`；`cpu_vga_utilization.rpt` 记录 23,859 LUT、3,907 registers、3 DSP48E1。这些包含 VGA/dashboard，不可当作孤立 CPU 的面积。
+  - 本地 `build_cpu_vga_pipeline/vivado_build_stdout.log` 记录了一次 Vivado 安装缺少 `unimacro_vhdl.tcl` 的构建失败。这只是本机批处理环境记录，不覆盖用户确认的队友最终流水线交付。
+- 人工/团队责任边界：
+  - 本次 AI 未声称亲自执行或重现队友的最终流水线 PPA/上板实验；其完成状态来自项目成员确认。
+  - 最终提交只应包含 RTL、汇编/HEX、testbench、构建脚本、文档和正式文本报告；Vivado `.runs/.cache/.Xil`、波形和 bitstream 是生成物，应保持忽略。
+- 是否合并：本次终检完成后提交并推送至项目远端。

@@ -39,6 +39,7 @@ module riscv_mc_cpu (
     localparam S_MEMORY     = 3'd3;
     localparam S_WRITEBACK  = 3'd4;
     localparam S_HALT       = 3'd5;
+    localparam S_MAC        = 3'd6;
 
     localparam WB_ALU = 2'b00;
     localparam WB_MEM = 2'b01;
@@ -50,6 +51,7 @@ module riscv_mc_cpu (
     reg [31:0] instr;
     reg [31:0] alu_result;
     reg [31:0] mem_rdata;
+    reg [31:0] mac_product_low;
     reg        halted;
     reg        illegal;
     reg [4:0]  dec_rd_addr;
@@ -95,10 +97,8 @@ module riscv_mc_cpu (
     wire [31:0] imm_val;
     wire [31:0] alu_in_a, alu_in_b;
     wire [31:0] alu_out;
-    // Board bring-up ROM does not execute the custom MAC instruction.
-    // Keep MAC disabled here to avoid the long combinational DSP path while
-    // validating the base CPU, ROM, MMIO, and board I/O flow.
-    wire [31:0] mac_result = `ZERO_WORD;
+    wire [31:0] mac_result_unused;
+    wire [31:0] mac_product_comb;
     wire        alu_zero;
     wire        br_taken;
 
@@ -113,6 +113,16 @@ module riscv_mc_cpu (
     wire [31:0] next_pc_val;
     wire [31:0] wb_data;
     wire        is_branch_instr;
+
+    mac_unit u_mac (
+        // Use operands latched in DECODE. Reading the register file directly
+        // here created an instruction-to-DSP critical path at 100 MHz.
+        .rs1_data   (dec_rs1_data),
+        .rs2_data   (dec_rs2_data),
+        .rd_old_data(dec_rd_old_data),
+        .mac_result (mac_result_unused),
+        .product_low(mac_product_comb)
+    );
 
     assign pc_plus_4   = pc + 32'd4;
     assign jal_target  = pc + dec_imm_val;
@@ -169,12 +179,15 @@ module riscv_mc_cpu (
         .imm            (imm_val)
     );
 
-    assign alu_in_a = dec_jump_reg                    ? dec_rs1_data :
+    assign alu_in_a = (dec_alu_type == `ALUTYPE_SHIFT) ?
+                        (dec_alu_src_imm ? dec_imm_val : dec_rs2_data) :
+                      dec_jump_reg                    ? dec_rs1_data :
                       (dec_alu_op == `ALUOP_AUIPC)    ? pc           :
                       (dec_alu_type == `ALUTYPE_JUMP) ? pc           :
                                                          dec_rs1_data;
 
-    assign alu_in_b = dec_alu_src_imm ? dec_imm_val : dec_rs2_data;
+    assign alu_in_b = (dec_alu_type == `ALUTYPE_SHIFT) ? dec_rs1_data :
+                      dec_alu_src_imm ? dec_imm_val : dec_rs2_data;
 
     alu u_alu (
         .a              (alu_in_a),
@@ -242,6 +255,7 @@ module riscv_mc_cpu (
             instr        <= `RV_NOP;
             alu_result   <= `ZERO_WORD;
             mem_rdata    <= `ZERO_WORD;
+            mac_product_low <= `ZERO_WORD;
             halted       <= `FALSE;
             illegal      <= `FALSE;
             dec_rd_addr  <= 5'b0;
@@ -300,12 +314,16 @@ module riscv_mc_cpu (
 
                 S_EXECUTE: begin
                     if (dec_is_mac)
-                        alu_result <= mac_result;
+                        mac_product_low <= mac_product_comb;
                     else
                         alu_result <= alu_out;
 
                     if (!(dec_mem_read || dec_mem_write || dec_reg_write))
                         pc <= next_pc_val;
+                end
+
+                S_MAC: begin
+                    alu_result <= dec_rd_old_data + mac_product_low;
                 end
 
                 S_MEMORY: begin
@@ -346,12 +364,18 @@ module riscv_mc_cpu (
             end
 
             S_EXECUTE: begin
-                if (dec_mem_read || dec_mem_write)
+                if (dec_is_mac)
+                    next_state = S_MAC;
+                else if (dec_mem_read || dec_mem_write)
                     next_state = S_MEMORY;
                 else if (dec_reg_write)
                     next_state = S_WRITEBACK;
                 else
                     next_state = S_FETCH;
+            end
+
+            S_MAC: begin
+                next_state = S_WRITEBACK;
             end
 
             S_MEMORY: begin

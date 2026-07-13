@@ -19,7 +19,8 @@ module soc_top #(
     parameter INST_RAM_SIZE    = 32768,
     parameter DATA_RAM_SIZE    = 32768,
     parameter UART_BAUD        = 115200,
-    parameter SYS_CLK_FREQ     = 50_000_000
+    parameter SYS_CLK_FREQ     = 100_000_000,
+    parameter INST_INIT_FILE   = "boot_rom.mem"
 ) (
     input  wire        clk,
     input  wire        rst_n,
@@ -27,12 +28,19 @@ module soc_top #(
     // External I/O
     output wire [15:0] led,
     input  wire [15:0] sw,
+    input  wire [4:0]  btn,
 
     output wire [7:0]  seg_an,
     output wire [7:0]  seg_cat,
 
     input  wire        uart_rx,
     output wire        uart_tx,
+
+    output wire [3:0]  vga_r,
+    output wire [3:0]  vga_g,
+    output wire [3:0]  vga_b,
+    output wire        vga_hsync,
+    output wire        vga_vsync,
 
     // Debug
     output wire [31:0] debug_pc,
@@ -98,7 +106,8 @@ module soc_top #(
     // Instruction Memory
     //==========================================================================
     inst_ram #(
-        .RAM_SIZE(INST_RAM_SIZE)
+        .RAM_SIZE(INST_RAM_SIZE),
+        .INIT_FILE(INST_INIT_FILE)
     ) inst_ram_inst (
         .clk        (clk),
         .addr       (ibus_addr),
@@ -213,11 +222,94 @@ module soc_top #(
     wire        uart_ready = 1'b1;
     assign uart_tx = 1'b1;
 
+    // CPU-owned VGA state. The renderer has no direct button input.
+    wire [31:0] vga_rdata;
+    wire        vga_ready;
+    wire [2:0]  vga_page;
+    wire [3:0]  vga_game_state, vga_hint, vga_selected;
+    wire [31:0] vga_guess, vga_attempts, vga_cycles, vga_instret;
+    wire [31:0] vga_cpi_x100, vga_ipc_x100, vga_mips_x10, vga_mac_count;
+    wire [31:0] vga_branches, vga_branch_miss, vga_stalls, vga_flushes;
+    wire [31:0] vga_pred_acc_x100, vga_bus_op, vga_bus_addr_trace;
+    wire [31:0] vga_bus_wdata_trace, vga_bus_rdata_trace, vga_bus_device;
+    wire [31:0] vga_last_button, vga_bench_id, vga_bench_normal;
+    wire [31:0] vga_bench_mac, vga_speedup_x100, vga_bench_status;
+    wire [31:0] vga_x3_guess, vga_x4_target, vga_x5_count;
+    wire [31:0] vga_trace_pc, vga_trace_instr, vga_trace_stage;
+    wire [31:0] vga_write_count;
+    wire [4:0]  vga_tetris_x, vga_tetris_y;
+    wire [2:0]  vga_tetris_piece, vga_tetris_next, vga_tetris_state;
+    wire [1:0]  vga_tetris_rotation;
+    wire [31:0] vga_tetris_score, vga_tetris_lock_count;
+    wire [31:0] vga_tetris_clear_count, vga_tetris_speed;
+    wire        vga_tetris_collision;
+
+    vga_mmio_regs vga_regs_inst (
+        .clk(clk), .rst_n(rst_n), .bus_en(vga_sel), .bus_we(dbus_we),
+        .bus_addr(dbus_addr[3:0]), .bus_wdata(dbus_wdata),
+        .tetris_collision(vga_tetris_collision), .bus_rdata(vga_rdata),
+        .bus_ready(vga_ready), .page(vga_page), .game_state(vga_game_state),
+        .guess(vga_guess), .attempts(vga_attempts), .hint(vga_hint),
+        .selected(vga_selected), .cycles(vga_cycles), .instret(vga_instret),
+        .cpi_x100(vga_cpi_x100), .ipc_x100(vga_ipc_x100),
+        .mips_x10(vga_mips_x10), .mac_count(vga_mac_count),
+        .branches(vga_branches), .branch_miss(vga_branch_miss),
+        .stalls(vga_stalls), .flushes(vga_flushes),
+        .pred_acc_x100(vga_pred_acc_x100), .bus_op(vga_bus_op),
+        .bus_addr_trace(vga_bus_addr_trace), .bus_wdata_trace(vga_bus_wdata_trace),
+        .bus_rdata_trace(vga_bus_rdata_trace), .bus_device(vga_bus_device),
+        .last_button(vga_last_button), .bench_id(vga_bench_id),
+        .bench_normal(vga_bench_normal), .bench_mac(vga_bench_mac),
+        .speedup_x100(vga_speedup_x100), .bench_status(vga_bench_status),
+        .x3_guess(vga_x3_guess), .x4_target(vga_x4_target), .x5_count(vga_x5_count),
+        .trace_pc(vga_trace_pc), .trace_instr(vga_trace_instr),
+        .trace_stage(vga_trace_stage), .write_count(vga_write_count),
+        .tetris_x(vga_tetris_x), .tetris_y(vga_tetris_y),
+        .tetris_piece(vga_tetris_piece), .tetris_next(vga_tetris_next),
+        .tetris_rotation(vga_tetris_rotation), .tetris_score(vga_tetris_score),
+        .tetris_state(vga_tetris_state), .tetris_lock_count(vga_tetris_lock_count),
+        .tetris_clear_count(vga_tetris_clear_count), .tetris_speed(vga_tetris_speed)
+    );
+
+    vga_dashboard #(.CPU_MODE(CPU_MODE), .CLK_FREQ_HZ(SYS_CLK_FREQ))
+    vga_dashboard_inst (
+        .clk(clk), .rst_n(rst_n), .page(vga_page), .game_state(vga_game_state),
+        .guess(vga_guess), .attempts(vga_attempts), .hint(vga_hint),
+        .selected(vga_selected), .cycles(vga_cycles), .instret(vga_instret),
+        .cpi_x100(vga_cpi_x100), .ipc_x100(vga_ipc_x100),
+        .mips_x10(vga_mips_x10), .mac_count(vga_mac_count),
+        .branches(vga_branches), .branch_miss(vga_branch_miss),
+        .pred_acc_x100(vga_pred_acc_x100), .bus_op(vga_bus_op),
+        .bus_addr_trace(vga_bus_addr_trace), .bus_wdata_trace(vga_bus_wdata_trace),
+        .bus_rdata_trace(vga_bus_rdata_trace), .bus_device(vga_bus_device),
+        .last_button(vga_last_button), .bench_id(vga_bench_id),
+        .bench_normal(vga_bench_normal), .bench_mac(vga_bench_mac),
+        .speedup_x100(vga_speedup_x100), .bench_status(vga_bench_status),
+        .write_count(vga_write_count), .x3_guess(vga_x3_guess),
+        .x4_target(vga_x4_target), .x5_count(vga_x5_count),
+        .tap_pc(debug_pc), .tap_instr(ibus_rdata), .tap_stage(debug_state),
+        .tetris_x(vga_tetris_x), .tetris_y(vga_tetris_y),
+        .tetris_piece(vga_tetris_piece), .tetris_next(vga_tetris_next),
+        .tetris_rotation(vga_tetris_rotation), .tetris_score(vga_tetris_score),
+        .tetris_state(vga_tetris_state), .tetris_lock_count(vga_tetris_lock_count),
+        .tetris_clear_count(vga_tetris_clear_count), .tetris_speed(vga_tetris_speed),
+        .live_cycle_count(perf_cycle_count), .live_instret_count(perf_instret_count),
+        .tetris_collision(vga_tetris_collision), .vga_r(vga_r), .vga_g(vga_g),
+        .vga_b(vga_b), .vga_hsync(vga_hsync), .vga_vsync(vga_vsync)
+    );
+
+    // Button slot 0xFFFF_FC50: debounced edge events consumed and ACKed by CPU.
+    wire [31:0] kbd4x4_rdata;
+    wire        kbd4x4_ready;
+    localparam integer BTN_DEBOUNCE_CYCLES = (SYS_CLK_FREQ / 50 > 1) ?
+                                               SYS_CLK_FREQ / 50 : 2;
+    button_mmio #(.DEBOUNCE_CYCLES(BTN_DEBOUNCE_CYCLES)) button_mmio_inst (
+        .clk(clk), .rst_n(rst_n), .btn_in(btn), .bus_en(kbd4x4_sel),
+        .bus_we(dbus_we), .bus_addr(dbus_addr[3:0]), .bus_wdata(dbus_wdata),
+        .bus_rdata(kbd4x4_rdata), .bus_ready(kbd4x4_ready)
+    );
+
     // Reserved peripherals (placeholders)
-    wire [31:0] vga_rdata    = 32'b0;
-    wire        vga_ready    = 1'b1;
-    wire [31:0] kbd4x4_rdata = 32'b0;
-    wire        kbd4x4_ready = 1'b1;
     wire [31:0] ps2_rdata    = 32'b0;
     wire        ps2_ready    = 1'b1;
     wire [31:0] timer_rdata  = 32'b0;
@@ -303,6 +395,8 @@ module soc_top #(
                         switch_sel   ? switch_ready   :
                         seg7_sel     ? seg7_ready     :
                         uart_sel     ? uart_ready     :
+                        vga_sel      ? vga_ready      :
+                        kbd4x4_sel   ? kbd4x4_ready   :
                         perf_sel     ? perf_ready     :
                         1'b1;
     assign dbus_error = 1'b0;

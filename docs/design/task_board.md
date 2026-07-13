@@ -2,7 +2,10 @@
 
 用途：拆分合并后的开发任务，定义优先级、负责人、路径、依赖、完成标准和当前状态。
 
-最后更新时间：2026-07-12（同步 B 队友 2026-07-10/11 更新：LW/SW 与 BEQ/BNE 扩展仿真、VGA + S1~S5 按键小游戏骨架、相关报告表格与 README 状态）
+最后更新时间：2026-07-13（项目验收完成后的最终归档同步）
+
+> 最终状态：验收、主板演示、流水线测试和流水线 PPA 工作均已完成。
+> 本看板保留历史负责人和过程记录；不再把已完成的交付项作为后续开发待办。
 
 ## 1. 优先级定义
 
@@ -55,9 +58,9 @@ DONE          →  已完成
 | P1 | 普通点积测试程序 | D | `tests/mac/` | CPU仿真通过 | ✅ result=70，cycle=62，instret=15（Icarus） | **DONE** |
 | P1 | MAC 点积测试程序 | D | `tests/mac/` | CPU仿真通过+MAC | ✅ result=70，cycle=54，instret=13，mac=4（Icarus） | **DONE** |
 | P1 | 点积对比：result+cycle+CPI | D | `reports/tables/` | 点积测试完成 | ✅ 对比表完成（speedup=1.1481）；xsim 正式数据待补 | **DONE** |
-| P1 | Vivado utilization/timing 导出 | B/C | `reports/vivado/` | 完整SoC重新综合 | 🔴 现有 heartbeat 报告无效（2 LUT / 24 FF），需重跑完整 SoC | **IN_PROGRESS** |
-| P1 | PPA 表格初稿 | D | `reports/tables/` | 完整SoC Vivado数据 | ✅ 模板+字段定义+验收条件完成；真实数据待完整 SoC 综合 | **DONE** |
-| P1 | RV32I单周期wrapper接入 | A | `src/core/riscv_sc_wrapper.v` | 参考riscv-minisys-cpu | 占位已创建，P1填入真实逻辑 | **IN_PROGRESS** |
+| P1 | Vivado utilization/timing 导出 | B/C | `reports/vivado/` | 完整SoC重新综合 | 完整 SoC 与流水线 PPA 已完成；引用时以相应交付报告为准 | **DONE** |
+| P1 | PPA 表格与结果归档 | D / 流水线队友 | `reports/tables/`、交付报告 | Vivado实现 | 完成；模型估算与最终实现报告须分别标注 | **DONE** |
+| P1 | RV32I单周期wrapper接入 | A | `src/core/riscv_sc_wrapper.v` | 参考riscv-minisys-cpu | 非主验收路径，保留兼容接口，不影响已验收系统 | **CLOSED** |
 | P1 | 性能计数器MMIO暴露 | D | `src/soc/soc_top.v`修改 | perf_counter验证通过 | ✅ Icarus 读回 cycle/instret/mac 通过（perf_mmio测试）；xsim 待补 | **DONE** |
 | P1 | LW/SW xsim 仿真 | B | `sim/tb/tb_load_store.v`、`tests/load_store/` | CPU basic通过 | `mem0=42 mem1=99 x3=42 x4=99 x5=141`，控制台 PASS | **DONE** |
 | P1 | BEQ/BNE xsim 仿真 | B | `sim/tb/tb_branch.v`、`tests/branch/` | CPU basic通过 | `x10=12 debug_pc=0x00000030`，控制台 PASS | **DONE** |

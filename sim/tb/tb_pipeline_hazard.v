@@ -59,7 +59,7 @@ module tb_pipeline_hazard;
             uut.data_ram_inst.mem[i] = 32'h0000_0000;
         end
         $readmemh(
-            "C:/Users/rolle/Processor-Design-Based-on-FPGA/tests/pipeline/hazard_test.hex",
+            "tests/pipeline/hazard_test.hex",
             uut.inst_ram_inst.mem,
             0,
             23

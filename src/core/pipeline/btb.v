@@ -21,7 +21,7 @@
 // Board: Minisys (XC7A100T-FGG484-1, 100MHz)
 //==============================================================================
 
-`include "public.vh"
+`include "../public.vh"
 
 module btb #(
     parameter ENTRIES   = 16,              // Number of BTB entries (power of 2)

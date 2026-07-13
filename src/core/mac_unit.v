@@ -16,14 +16,15 @@ module mac_unit (
     input  wire [31:0] rs2_data,        // Multiplier B
     input  wire [31:0] rd_old_data,     // Accumulator input (rd old value)
 
-    output wire [31:0] mac_result       // rd_old + (rs1 * rs2)[31:0]
+    output wire [31:0] mac_result,      // rd_old + (rs1 * rs2)[31:0]
+    output wire [31:0] product_low      // Pipeline boundary for multi-cycle CPU
 );
 
     // Full 64-bit multiply, take lower 32 bits for accumulation
     wire [63:0] product;
     assign product = $signed(rs1_data) * $signed(rs2_data);
 
-    // Accumulate: rd_old + product[31:0]
-    assign mac_result = rd_old_data + product[31:0];
+    assign product_low = product[31:0];
+    assign mac_result = rd_old_data + product_low;
 
 endmodule
